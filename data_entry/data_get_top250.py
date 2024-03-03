@@ -2,6 +2,8 @@ import requests
 import parsel
 from sqlalchemy import create_engine
 import pandas as pd
+from algo.my_decorator import timer
+
 '''
 1、明确需求:
     爬取豆瓣Top250排行电影信息
@@ -70,6 +72,7 @@ class DataGet:
         except Exception as e:
             print(e)
 
+    @timer
     def calculate(self):
         movie_data_list = self.get_top250()
         self.write_sqlite_db(movie_data_list)
