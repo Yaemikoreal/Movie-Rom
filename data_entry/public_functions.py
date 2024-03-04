@@ -33,4 +33,4 @@ class PublicFunctions(object):
             # 关闭数据库连接
             conn.close()
         else:
-            print("暂无信息需要写入！")
+            print(f"{write_table}表暂无信息需要写入！")
