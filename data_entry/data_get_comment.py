@@ -1,12 +1,9 @@
 import os
 import sqlite3
-
 import requests
-import parsel
-from sqlalchemy import create_engine
 import pandas as pd
 from bs4 import BeautifulSoup
-
+from data_entry.public_functions import PublicFunctions
 from algo.my_decorator import timer
 
 '''
@@ -30,8 +27,14 @@ class DataGetComment:
         self.rating_list = ['allstar50 main-title-rating', 'allstar40 main-title-rating',
                             'allstar30 main-title-rating', 'allstar20 main-title-rating',
                             'allstar10 main-title-rating']
+        # 公共函数
+        self.pf = PublicFunctions()
+        # 数据库路径
+        self.db_path = self.pf.path_get()
 
     def get_comment(self, status):
+        # rating_score分数默认值为3
+        rating_score = 3
         # movie_data_list用于存储所读取的所有电影评论信息
         movie_data_list = []
         if status == 1:
@@ -109,30 +112,9 @@ class DataGetComment:
             movie_data_df['movie_rating'] = movie_data_df['movie_rating'].replace(self.rating_score_dt)
             return movie_data_df
 
-    def write_sqlite_db(self, movie_df):
-        # 构建数据库文件的路径
-        db_path = self.path_get()
-        # 创建数据库连接对象
-        conn = sqlite3.connect(db_path)
-        # 将 DataFrame 写入到已存在的数据库表中
-        movie_df.to_sql('movie_data_comment', conn, if_exists='append', index=False)
-        # 关闭数据库连接
-        conn.close()
-
-    def path_get(self):
-        # 获取当前脚本所在目录的绝对路径
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        # 获取当前脚本所在目录的上一层目录
-        script_dir = os.path.dirname(script_dir)
-        # 构建数据库文件的路径
-        db_path = os.path.join(script_dir, "MovieData.sqlite")
-        return db_path
-
     def read_movie_data_comment(self, user_name, movie_name):
-        # 构建数据库文件的路径
-        db_path = self.path_get()
         # 创建数据库连接对象
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(self.db_path)
         # 从数据库中读取表格数据到 DataFrame
         data_df = pd.read_sql_query(
             f"SELECT * FROM movie_data_comment WHERE user_name = '{user_name}' AND movie_name = '{movie_name}' ", conn)
@@ -140,10 +122,8 @@ class DataGetComment:
         return data_df
 
     def read_id_max(self):
-        # 构建数据库文件的路径
-        db_path = self.path_get()
         # 创建数据库连接对象
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         # 执行查询
         cursor.execute("SELECT MAX(id) FROM movie_data_comment")
@@ -184,7 +164,7 @@ class DataGetComment:
     def calculate_movie(self, status):
         movie_df = self.get_comment(status)
         new_movie_df = self.filter(movie_df)
-        self.write_sqlite_db(new_movie_df)
+        self.pf.write_sqlite_db(new_movie_df, 'movie_data_comment')
 
     @timer
     def calculate(self):
