@@ -1,16 +1,16 @@
-import os
 import sqlite3
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
-
 from data_entry.calculate_user_msg import CalculateUserMsg
 from data_entry.public_functions import PublicFunctions
 from algo.my_decorator import timer
 
 '''
-1、明确需求:
-    爬取豆瓣最受欢迎的影评（会每日更新）
+该脚本用于:
+    1.爬取豆瓣最受欢迎以及最新的影评（会每日更新）(该脚本主要实现),
+    2.同步user_msg表中的user_id信息(调用CalculateUserMsg);
+    3.同步movie_msg表中的movie_id信息(调用CalculateUserMsg)。
 '''
 
 
@@ -179,6 +179,7 @@ class DataGetComment:
 def mian_test():
     obj = DataGetComment()
     obj.calculate()
+    # 同步表信息
     obs = CalculateUserMsg()
     obs.calculate()
 

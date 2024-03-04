@@ -1,14 +1,12 @@
-import os
 import sqlite3
-
 import pandas as pd
-
 from algo.my_decorator import timer
 from data_entry.public_functions import PublicFunctions
 
 """
-该脚本用于同步user_msg表中的user_id信息;
-    以及movie_msg表中的movie_id信息
+该脚本用于:
+    1.同步user_msg表中的user_id信息;
+    2.同步movie_msg表中的movie_id信息。
 """
 
 
