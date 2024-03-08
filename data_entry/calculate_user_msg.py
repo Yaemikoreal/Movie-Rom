@@ -90,7 +90,7 @@ class CalculateUserMsg:
         conn.close()
         print('Movie_msg表已有电影评分已更新！')
 
-    def processing_movie_information(self, start_id, movie_name_list, movie_msg_df):
+    def processing_movie_information(self, start_id, movie_name_list):
         for movie in movie_name_list:
             movie_status = self.inspect_movie_name(movie)
             # 计算出该电影的平均评分
@@ -108,6 +108,24 @@ class CalculateUserMsg:
             else:
                 self.user_msg_list_old.append(movie_dt)
 
+    def write_movie_msg(self):
+        movie_msg_list = self.user_msg_list.copy()
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        for it in movie_msg_list:
+            movie_id = it.get('movie_id')
+            average_score = it.get('average_score')
+            movie_name = it.get('movie_name')
+            # 使用占位符 ? 来防止 SQL 注入，并指定要更新的列和设置的值
+            sql = "INSERT INTO movie_msg (movie_id, average_score, movie_name) VALUES (?, ?, ?);"
+            # 执行 SQL 更新语句
+            cursor.execute(sql, (movie_id, average_score, movie_name))
+        # 提交事务
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print('Movie_msg表已更新未有内容！')
+
     def calculate_movie_msg(self):
         # 读取出数据内容
         movie_msg_df = self.pf.read_table_all('movie_msg')
@@ -116,18 +134,19 @@ class CalculateUserMsg:
         # 获取不重复的 movie_name 列并转换为列表
         movie_name_list = self.movie_comments_df['movie_name'].unique().tolist()
         # 对电影数据进行处理
-        self.processing_movie_information(start_id, movie_name_list, movie_msg_df)
-        user_msg_df = pd.DataFrame(self.movie_msg_list)
+        self.processing_movie_information(start_id, movie_name_list)
         #  写入
-        self.pf.write_sqlite_db(user_msg_df, 'movie_msg')
+        self.write_movie_msg()
         # 更新已有电影评分数据
         self.update_movie_msg()
+
     @timer
     def calculate(self):
         # 对user_msg表根据movie_data_comment表数据进行同步更新
         self.calculate_user_msg()
         # 对movie_msg表根据movie_data_comment表数据进行同步更新
         self.calculate_movie_msg()
+
 
 
 def main_test():
