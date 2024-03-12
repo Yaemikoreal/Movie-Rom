@@ -1,18 +1,15 @@
 import random
 import re
-import sqlite3
 import time
-import requests
 import os
 from selenium import webdriver
-from bs4 import BeautifulSoup
 from selenium.webdriver.edge.options import Options
 from selenium.webdriver.edge.service import Service
 import pandas as pd
 from bs4 import BeautifulSoup
-from data_entry.calculate_user_msg import CalculateUserMsg
-from data_entry.data_get_comment import DataGetComment
-from data_entry.public_functions import PublicFunctions
+from data_entry.CalculateUserMsg import CalculateUserMsg
+from data_entry.DataGetComment import DataGetComment
+from data_entry.PublicFunctions import PublicFunctions
 from algo.my_decorator import timer
 
 '''
@@ -39,10 +36,16 @@ class DataMovieMsgGetter:
         # 原有的movie_msg表信息
         self.movie_msg_df = self.pf.read_table_all("movie_msg")
 
-    def read_movie_msg_df(self):
+    def read_movie_data_comment_df(self):
         # 电影名单
-        movie_name_list = self.movie_data_comment_df['movie_name'].unique().tolist()
-        return movie_name_list
+        movie_data_comment_name_list = self.movie_data_comment_df['movie_name'].unique().tolist()
+        movie_msg_name_list = self.movie_msg_df['movie_name'].unique().tolist()
+        # 找出movie_data_comment_name_list有而movie_msg_name_list没有的值,得到即为需要更新的电影列表
+        result_list = [value for value in movie_data_comment_name_list if value not in movie_msg_name_list]
+        # # top250电影
+        # movie_data_top250_df = self.pf.read_table_all("movie_data_top250")
+        # result_list = movie_data_top250_df['电影名字'].unique().tolist()
+        return result_list
 
     def set_edge_options(self):
         # 反检测设置 #
@@ -196,22 +199,46 @@ class DataMovieMsgGetter:
         movie_msg_df = pd.DataFrame(movie_msg_dt_2)
         return movie_msg_df
 
+    def movie_name_list_detection(self, movie_name_list):
+        if len(movie_name_list) == 0:
+            log_content = "没有电影需要获取其详细信息!"
+            print(log_content)
+            # 日志信息写入
+            self.pf.write_sqlite_db_log(bug_level="INFO", movie_name=None, log_content=log_content)
+            return False
+        return True
+
+    def get_movie_all_msg(self,movie_name):
+        # 读取电影信息核心函数
+        soup = self.get_movie_msg_all(movie_name)
+        movie_msg_dt = self.calculate_movie_msg(soup)
+        if movie_msg_dt is not None:
+            movie_msg_df = self.movie_msg_df_constitute(movie_msg_dt, movie_name)
+            self.pf.write_sqlite_db(movie_msg_df, 'movie_msg')
+            print(f"电影<{movie_name}>的相关数据已经写入表中")
+        else:
+            log_content = f"电影<{movie_name}>未查询到相关内容结果！"
+            print(log_content)
+            # 日志信息写入
+            self.pf.write_sqlite_db_log(bug_level="WARNING", movie_name=movie_name, log_content=log_content)
+
     @timer
     def calculate_movie(self):
-        movie_name_list = self.read_movie_msg_df()
+        movie_name_list = self.read_movie_data_comment_df()
+        # 如果movie_name_list为空，则不进行后续操作
+        movie_name_list_status = self.movie_name_list_detection(movie_name_list)
+        if not movie_name_list_status:
+            return
+        # 对列表名称进行遍历，同时将电影内容获取并写入
         for movie_name in movie_name_list:
             result_status = self.determine(movie_name)
             # result_status为True时说明表中没有对应值
             if result_status:
-                soup = self.get_movie_msg_all(movie_name)
-                movie_msg_dt = self.calculate_movie_msg(soup)
-                if movie_msg_dt is not None:
-                    movie_msg_df = self.movie_msg_df_constitute(movie_msg_dt, movie_name)
-                    self.pf.write_sqlite_db(movie_msg_df, 'movie_msg')
-                    print(f"电影{movie_name}的相关数据已经写入表中")
-                time.sleep(random.randint(5, 10))
+                self.get_movie_all_msg(movie_name)
+                time.sleep(random.randint(1, 3))
             else:
-                print(f"电影{movie_name}在表中已有数据！")
+                print(f"电影<{movie_name}>在表中已有数据！")
+            print("------------------------------------")
 
     def calculate(self):
         self.calculate_movie()
