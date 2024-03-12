@@ -2,9 +2,9 @@ import sqlite3
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
-from data_entry.calculate_user_msg import CalculateUserMsg
-from data_entry.data_get_comment import DataGetComment
-from data_entry.public_functions import PublicFunctions
+from data_entry.CalculateUserMsg import CalculateUserMsg
+from data_entry.DataGetComment import DataGetComment
+from data_entry.PublicFunctions import PublicFunctions
 from algo.my_decorator import timer
 
 
