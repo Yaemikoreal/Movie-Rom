@@ -1,6 +1,6 @@
 import os
 import sqlite3
-
+from datetime import datetime
 import pandas as pd
 
 
@@ -34,3 +34,19 @@ class PublicFunctions(object):
             conn.close()
         else:
             print(f"{write_table}表暂无信息需要写入！")
+
+    def write_sqlite_db_log(self, bug_level, movie_name, log_content):
+        now_time = datetime.now()
+        write_df_list = [[bug_level, movie_name, log_content, now_time]]
+        write_df = pd.DataFrame(write_df_list,
+                                columns=['bug_level', 'movie_name', 'log_content', 'recording_time'])
+        write_table = "movie_logs"
+        if bug_level in ["DEBUG", "INFO", "WARNING", "ERROR"]:
+            if not write_df.empty:
+                conn = sqlite3.connect(self.db_path)
+                # 将 DataFrame 写入到已存在的数据库表中
+                write_df.to_sql(write_table, conn, if_exists='append', index=False)
+                print(f"写入一条日志内容！")
+                print("-----------------------------")
+                # 关闭数据库连接
+                conn.close()
