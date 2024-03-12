@@ -15,7 +15,7 @@ from algo.my_decorator import timer
 '''
 
 
-class DataGet:
+class DataGetTop250:
     def __init__(self):
         self.User_Agent = ('Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) '
                            'Chrome/81.0.4044.138 Safari/537.36')
@@ -79,7 +79,7 @@ class DataGet:
 
 
 def mian_test():
-    obj = DataGet()
+    obj = DataGetTop250()
     obj.calculate()
 
 
