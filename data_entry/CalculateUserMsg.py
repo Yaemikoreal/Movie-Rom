@@ -1,12 +1,12 @@
 import sqlite3
 import pandas as pd
 from algo.my_decorator import timer
-from data_entry.public_functions import PublicFunctions
+from data_entry.PublicFunctions import PublicFunctions
 
 """
 该脚本用于:
     1.同步user_msg表中的user_id信息;
-    2.同步movie_msg表中的movie_id信息。
+    # 2.同步movie_msg表中的movie_id信息。
 """
 
 
@@ -134,7 +134,7 @@ class CalculateUserMsg:
 
     def calculate_movie_msg(self):
         # 读取出数据内容
-        movie_msg_df = self.pf.read_table_all('movie_msg')
+        # movie_msg_df = self.pf.read_table_all('movie_msg')
         # 获取不重复的 movie_name 列并转换为列表
         movie_name_list = self.movie_comments_df['movie_name'].unique().tolist()
         # 对电影数据进行处理
@@ -147,8 +147,8 @@ class CalculateUserMsg:
     def calculate(self):
         # 对user_msg表根据movie_data_comment表数据进行同步更新
         self.calculate_user_msg()
-        # 对movie_msg表根据movie_data_comment表数据进行同步更新
-        self.calculate_movie_msg()
+        # # 对movie_msg表根据movie_data_comment表数据进行同步更新
+        # self.calculate_movie_msg()
 
 
 
