@@ -64,7 +64,8 @@ class DataGetTop250:
     def write_sqlite_db(self, movie_data_list):
         movie_df = pd.DataFrame(movie_data_list)
         # 创建到 SQLite 数据库的引擎对象
-        engine = create_engine('sqlite:///../MovieData.sqlite')
+        engine = create_engine('sqlite:///../db.sqlite3')
+        # engine = create_engine('sqlite:///../MovieData.sqlite')
         # 将 DataFrame 写入 SQLite 数据库
         try:
             movie_df.to_sql('movie_data_top250', con=engine, if_exists='replace', index=False)

@@ -14,7 +14,8 @@ class PublicFunctions(object):
         # 获取当前脚本所在目录的上一层目录
         script_dir = os.path.dirname(script_dir)
         # 构建数据库文件的路径
-        db_path = os.path.join(script_dir, "MovieData.sqlite")
+        db_path = os.path.join(script_dir, "db.sqlite3")
+        # db_path = os.path.join(script_dir, "MovieData.sqlite")
         return db_path
 
     def read_table_all(self, read_table):
