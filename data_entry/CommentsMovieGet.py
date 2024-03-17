@@ -1,4 +1,6 @@
 import sqlite3
+import time
+
 import requests
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -6,7 +8,6 @@ from data_entry.CalculateUserMsg import CalculateUserMsg
 from data_entry.DataGetComment import DataGetComment
 from data_entry.PublicFunctions import PublicFunctions
 from algo.my_decorator import timer
-
 
 '''
 该脚本用于:
@@ -36,28 +37,30 @@ class CommentsMovieGet:
         self.dgc = DataGetComment()
         # 数据库路径
         self.db_path = self.pf.path_get()
-        # movie_data_list用于存储所读取的所有电影评论信息
-        self.movie_data_list = []
         # 电影名
         self.movie_name = None
-        # 电影的豆瓣subject_id
-        self.movie_subject_id = kwargs.get('MovieSubjectId')
+        self.movie_data_list = []
 
-    def get_comment(self):
-        # rating_score分数默认值为'还行'
-        rating_score = '还行'
+    def get_comment(self, subject_id):
+        # 打分默认值为还行
+        rating_score = "还行"
         # 暂定每部电影100条评论
         page_list = [0, 20, 40, 60, 80]
         for page in page_list:
+            # time.sleep(3)
             # 模拟浏览器发送请求
-            url = f'https://movie.douban.com/subject/{self.movie_subject_id}/comments?start={page}&limit=20&status=P&sort=new_score'
+            url = f'https://movie.douban.com/subject/{subject_id}/comments?start={page}&limit=20&status=P&sort=new_score'
             headers = {
                 'User-Agent': self.User_Agent
             }
             response = requests.get(url=url, headers=headers)
             soup = BeautifulSoup(response.text, 'html.parser')
+            # if soup is None:
+            #     return None
             # 通过类名查找元素
             soup = soup.find('div', id='content')
+            if soup is None:
+                return None
             # 找到包含电影名的 h1 标签
             movie_name_tag = soup.find('h1')
             # 提取电影名
@@ -73,7 +76,6 @@ class CommentsMovieGet:
                 user_id_tag = div.find('a')
                 user_name = user_id_tag['title']
                 user_name = user_name.replace("'", "")
-                print(user_name)
                 # 评论分数
                 for it in self.rating_list:
                     a_tag = div.find('span', class_=f'{it}')
@@ -129,6 +131,7 @@ class CommentsMovieGet:
             short_commentary = row['short_commentary']
             data_df = self.read_movie_data_comment(user_name, movie_name)
             if data_df.empty:
+                print(f"用户<{user_name}>对电影<{movie_name}>的评论写入，分数为<{rating_score}>!")
                 new_movie_dt = {
                     "id": start_id,
                     "user_name": user_name,
@@ -139,6 +142,8 @@ class CommentsMovieGet:
                 new_movie_list.append(new_movie_dt)
                 start_id += 1
                 count_num += 1
+            else:
+                print(f"用户<{user_name}>对电影<{movie_name}>的评论已经存在！")
         new_movie_df = pd.DataFrame(new_movie_list)
         if new_movie_df.empty:
             print("暂无新影评可获取！")
@@ -146,15 +151,40 @@ class CommentsMovieGet:
             print(f"成功写入{count_num}条新数据！")
         return new_movie_df
 
+    def get_movie_subject_id(self):
+        movie_msg_df = self.pf.read_table_all("movie_msg")
+        movie_data_comment_df = self.pf.read_table_all("movie_data_comment")
+        merged_df = pd.merge(movie_msg_df, movie_data_comment_df, on='movie_name', how='left')
+        result_df = merged_df.groupby('movie_name').size().reset_index(name='count')
+        # 在 result_df 中包含 'subject_id' 列
+        result_df = result_df.merge(merged_df[['movie_name', 'subject_id']].drop_duplicates(), on='movie_name',
+                                    how='left')
+        filtered_result_df = result_df[result_df['count'] < 100]
+        movie_subject_id_list = filtered_result_df['subject_id'].values.tolist()
+        return movie_subject_id_list
+
     def calculate_movie(self):
-        movie_df = self.get_comment()
-        new_movie_df = self.filter(movie_df)
-        self.pf.write_sqlite_db(new_movie_df, 'movie_data_comment')
+        # 筛除该库中评论数已超过100条的电影，并获取到需要获取评论的电影的subject_id
+        movie_subject_id_list = self.get_movie_subject_id()
+        # 对每部电影分别处理
+        for subject_id in movie_subject_id_list:
+            # movie_data_list用于存储所读取的电影评论信息
+            self.movie_data_list = []
+            movie_df = self.get_comment(subject_id)
+            if movie_df is None:
+                # 如果movie_df为空，则说明获取被拦截，跳出，下次再获取
+                print("获取为空！！！")
+                print("-----------------------------")
+                continue
+            new_movie_df = self.filter(movie_df)
+            self.pf.write_sqlite_db(new_movie_df, 'movie_data_comment')
+            print(f"电影{self.movie_name}的影评获取完毕!")
+            print("---------------------------------")
 
     @timer
     def calculate(self):
         self.calculate_movie()
-        print(f"电影{self.movie_name}的影评获取完毕!")
+
 
 
 def main(**kwargs):
@@ -166,10 +196,7 @@ def main(**kwargs):
 
 
 def main_test():
-    params = {
-        "MovieSubjectId": 1291546
-    }
-    main(**params)
+    main()
 
 
 if __name__ == '__main__':
