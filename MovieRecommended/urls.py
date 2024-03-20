@@ -17,6 +17,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+import moviereal.views
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # https://www.xxxx.com/moviereal/ --> 到moviereal应用的view中找moviereal函数
+    path('moviereal/', moviereal.views.moviereal),
+
+    # https://www.xxxx.com/moviereal/userlogin --> 到moviereal应用的view中找userlogin函数
+    path('moviereal/userlogin', moviereal.views.userlogin)
 ]
