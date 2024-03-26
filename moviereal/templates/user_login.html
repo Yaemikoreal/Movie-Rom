@@ -1,13 +1,115 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>用户登录</title>
-</head>
-<body>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Login</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
 
-<h1>这里是用户登录的界面！</h1>
-<img src="{% static '20240320154639.jpg' %}" alt="这是一个示例图片">
+        form {
+            text-align: center;
+            margin-top: 20px;
+            border: 2px solid #333;
+            padding: 20px;
+            width: 300px;
+        }
+
+        label {
+            display: inline-block;
+            text-align: right;
+            width: 80px; /* 设置固定宽度，根据需要调整 */
+        }
+
+        input {
+            width: 200px; /* 设置输入框宽度，根据需要调整 */
+        }
+
+        .form-title {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <form id="loginForm" method="post">
+        {% csrf_token %}
+        <h1 class="form-title">电影推荐登录</h1>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username"><br>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password"><br>
+
+        <button type="submit">login</button>
+    </form>
+
+   <script>
+    document.getElementById('loginForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // 阻止表单默认提交行为
+
+    var username = document.getElementById('username').value; // 获取用户名输入框的值
+    var password = document.getElementById('password').value; // 获取密码输入框的值
+
+    var data = {
+        'username': username,
+        'password': password
+    };
+
+    var csrftoken = getCookie('csrftoken'); // 从 cookie 中获取 CSRF 令牌
+
+    fetch('/moviereal/userlogin', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken // 在请求头中添加 CSRF 令牌
+        },
+        body: JSON.stringify(data)
+    })
+     .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 示例：用户登录成功后保存用户名和密码信息到 Session Storage
+                    saveUserInfoToSessionStorage("exampleUser", "examplePassword");
+                    alert(data.message); // 在页面中显示一个提示框
+                    window.location.href = '/moviereal/index'; // 跳转到下个页面
+                } else {
+                    alert(data.message); // 如果验证失败，显示错误提示
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+// 用户登录成功后将用户名和密码信息存储在 Session Storage 中
+function saveUserInfoToSessionStorage(username, password) {
+    sessionStorage.setItem('username', username); // 将用户名存储在 Session Storage 中
+    sessionStorage.setItem('password', password); // 将密码存储在 Session Storage 中
+}
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+    </script>
 </body>
+
 </html>

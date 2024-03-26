@@ -1,6 +1,10 @@
+import json
+
 import requests
 from django.shortcuts import render, HttpResponse
 from .models import Moviereal
+from django.http import JsonResponse
+from django.contrib.auth import authenticate
 
 
 # Create your views here.
@@ -10,7 +14,33 @@ def moviereal(request):
 
 
 def userlogin(request):
-    return render(request, "user_login.html")
+    """
+    用户登录
+    :param request:
+    :return:
+    """
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        # 处理表单提交逻辑
+        username = data.get('username')
+        password = data.get('password')
+
+        # 进行用户认证逻辑
+        authenticated_user = authenticate(request, username=username, password=password)
+
+        if authenticated_user is not None:
+            # 认证成功，可以返回一个成功页面或重定向到其他页面
+            # 假设验证成功，返回成功信息给前端
+            response_data = {'success': True, 'message': '登录成功!'}
+            return JsonResponse(response_data)
+        else:
+            # 认证失败，可以返回一个错误页面或重定向到登录页面
+            response_data = {'success': False, 'message': '用户名或密码不正确！'}
+            return JsonResponse(response_data)
+    else:
+        # GET 请求时返回登录表单页面
+        return render(request, 'user_login.html')
 
 
 def index(request):
