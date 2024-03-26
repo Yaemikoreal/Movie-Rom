@@ -19,13 +19,17 @@ from django.urls import path
 
 import moviereal.views
 
-
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls, name='admin'),
 
     # https://www.xxxx.com/moviereal/ --> 到moviereal应用的view中找moviereal函数
     path('moviereal/', moviereal.views.moviereal),
 
     # https://www.xxxx.com/moviereal/userlogin --> 到moviereal应用的view中找userlogin函数
-    path('moviereal/userlogin', moviereal.views.userlogin)
+    path('moviereal/userlogin', moviereal.views.userlogin),
+
+    # 测试页面，用于展示
+    path('', moviereal.views.index, name='index'),
+    # path('detail/', moviereal.views.detail, name='detail'),
+    path('detail/<int:goods_id>/', moviereal.views.detail, name='detail'),
 ]
