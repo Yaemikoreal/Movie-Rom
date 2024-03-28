@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from data_entry.CalculateUserMsg import CalculateUserMsg
 from data_entry.DataGetComment import DataGetComment
 from data_entry.PublicFunctions import PublicFunctions
-from algo.my_decorator import timer
+from algo.MyDecorator import timer
 
 '''
 该脚本用于:
@@ -229,6 +229,7 @@ class DataMovieMsgGetter:
         return True
 
     def resize_image(self, image_path, target_width=216, target_height=308):
+        # 调整图片大小
         img = Image.open(image_path)
         resized_img = img.resize((target_width, target_height))
         return resized_img
@@ -238,7 +239,8 @@ class DataMovieMsgGetter:
         movie_name = movie_msg_dt.get('movie_name')
         subject_id = movie_msg_dt.get('subject_id')
         img_src = movie_msg_dt.get('movie_img_src')
-
+        if subject_id is None:
+            return None
         # 获取当前脚本的绝对路径
         script_dir = os.path.dirname(os.path.abspath(__file__))
         # 上一层目录，即保存图片的目录
@@ -275,10 +277,13 @@ class DataMovieMsgGetter:
         if movie_msg_dt is not None:
             # 获取图片
             movie_msg_dt1 = self.movie_img_get(movie_msg_dt)
-            # 整合数据信息
-            movie_msg_df = self.movie_msg_df_constitute(movie_msg_dt1, movie_name)
-            self.pf.write_sqlite_db(movie_msg_df, 'movie_msg')
-            print(f"电影<{movie_name}>的相关数据已经写入表中")
+            if movie_msg_dt1 is not None:
+                # 整合数据信息
+                movie_msg_df = self.movie_msg_df_constitute(movie_msg_dt1, movie_name)
+                self.pf.write_sqlite_db(movie_msg_df, 'movie_msg')
+                print(f"电影<{movie_name}>的相关数据已经写入表中")
+            else:
+                print(f"电影<{movie_name}>的subject_id为空！！！")
         else:
             log_content = f"电影<{movie_name}>未查询到相关内容结果！"
             print(log_content)
