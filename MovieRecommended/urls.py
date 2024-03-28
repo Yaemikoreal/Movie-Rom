@@ -26,10 +26,10 @@ urlpatterns = [
     path('moviereal/', moviereal.views.moviereal),
 
     # https://www.xxxx.com/moviereal/userlogin --> 到moviereal应用的view中找userlogin函数
-    path('moviereal/userlogin', moviereal.views.userlogin),
+    path('', moviereal.views.userlogin, name='userlogin'),
 
     # 测试页面，用于展示
-    path('', moviereal.views.index, name='index'),
+    path('moviereal/index', moviereal.views.index, name='index'),
     # path('detail/', moviereal.views.detail, name='detail'),
     path('detail/<int:goods_id>/', moviereal.views.detail, name='detail'),
 ]
