@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Yaemiko影视推荐</title>
+    <style>
+        body {
+            background-color: #f0f8ff; /* 淡蓝色 */
+            margin: 0;
+            padding: 0;
+            position: relative; /* 设置为相对定位的参考点 */
+        }
+        .container {
+            display: flex;
+        }
+        .sidebar {
+            width: 33.33%;
+            padding: 20px;
+        }
+        .content {
+            width: 66.66%;
+            padding: 20px;
+            text-align: right; /* 文本右对齐 */
+        }
+        .movie-container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .movie {
+            flex: 1 0 14.2%;
+            margin: 10px;
+            padding: 10px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .movie img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .movie-info h2 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        .movie-info p {
+            font-size: 14px;
+        }
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 3px solid #ccc;
+            clear: both;
+        }
+        #main-title {
+            text-align: left;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #username-display {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #f0f8ff;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1 id="main-title">Yaemiko影视推荐</h1>
+    </div>
+    <div id="username-display"></div>
+    <hr>
+    <div class="content">
+        <h2 id="main-title">影视推荐</h2>
+        <div class="movie-container">
+            {% for movie in movies %}
+                <div class="movie">
+                    {% if movie.image %}
+                        <img src="../../static/img/{{ movie.image }}" alt="Movie Image">
+                    {% else %}
+                        <img src="../../static/img/test.jpg" alt="Default Image">
+                    {% endif %}
+                    <div class="movie-info">
+                        <h2>{{ movie.title }}</h2>
+                        <p>{{ movie.description }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var username = sessionStorage.getItem('username');
+            if (username) {
+                var usernameDisplay = document.getElementById('username-display');
+                usernameDisplay.textContent = '欢迎，' + username;
+            }
+        });
+    </script>
+</body>
+</html>
