@@ -2,6 +2,8 @@ import random
 import re
 import time
 import os
+from PIL import Image
+import requests
 from selenium import webdriver
 from selenium.webdriver.edge.options import Options
 from selenium.webdriver.edge.service import Service
@@ -93,6 +95,20 @@ class DataMovieMsgGetter:
         if movie_title is None:
             return None
         movie_title = movie_title.find('div', class_="root")
+        # 图片路径获取
+        movie_img_title = movie_title.find('a', class_="cover-link")
+
+        if movie_img_title:
+            # 查找包含图片的标签
+            img_tag = movie_img_title.find('img')
+            # 提取src属性的值
+            img_src = img_tag['src']
+            print("提取到的src路径信息为:", img_src)
+        else:
+            img_src = None
+            print("未找到包含图片的标签")
+
+        # 电影信息获取
         movie_title = movie_title.find_all('div', class_="detail")
         if not movie_title:
             return None
@@ -130,8 +146,8 @@ class DataMovieMsgGetter:
             "average_score": rating,
             "rating_people": rating_people,
             "movie_labels": movie_labels,
-            "movie_actors": movie_actors
-
+            "movie_actors": movie_actors,
+            "movie_img_src": img_src
         }
         return movie_msg_dt
 
@@ -176,6 +192,7 @@ class DataMovieMsgGetter:
         return rating_people
 
     def movie_msg_df_constitute(self, movie, movie_name_real):
+        # 数据整理
         movie_name, movie_year = self.constitute_movie_name_year(movie)
         rating_people = self.constitute_rating_people(movie)
         movie_duration, movie_labels = self.constitute_movie_duration(movie)
@@ -185,6 +202,8 @@ class DataMovieMsgGetter:
         subject_id = movie.get('subject_id')
         # 电影演员
         movie_actors = movie.get('movie_actors')
+        # 图片路径
+        movie_img = movie.get('movie_img_src')
         movie_msg_dt_2 = {
             "movie_name": [movie_name_real],
             "movie_name_notes": [movie_name],
@@ -194,7 +213,8 @@ class DataMovieMsgGetter:
             "movie_labels": [movie_labels],
             "movie_actors": [movie_actors],
             "movie_duration": [movie_duration],
-            "subject_id": [subject_id]
+            "subject_id": [subject_id],
+            "movie_img": [movie_img]
         }
         movie_msg_df = pd.DataFrame(movie_msg_dt_2)
         return movie_msg_df
@@ -208,12 +228,55 @@ class DataMovieMsgGetter:
             return False
         return True
 
-    def get_movie_all_msg(self,movie_name):
+    def resize_image(self, image_path, target_width=216, target_height=308):
+        img = Image.open(image_path)
+        resized_img = img.resize((target_width, target_height))
+        return resized_img
+
+    def movie_img_get(self, movie_msg_dt):
+        # 图片使用subject_id进行索引
+        movie_name = movie_msg_dt.get('movie_name')
+        subject_id = movie_msg_dt.get('subject_id')
+        img_src = movie_msg_dt.get('movie_img_src')
+
+        # 获取当前脚本的绝对路径
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # 上一层目录，即保存图片的目录
+        save_dir = os.path.abspath(os.path.join(script_dir, os.pardir, "static", "img"))
+
+        # 本地保存文件名
+        file_name = f"{subject_id}.jpg"
+        # 完整的本地保存路径
+        img_local_filename = os.path.join(save_dir, file_name)
+
+        # 发送请求获取图片内容
+        response = requests.get(img_src)
+        if response.status_code == 200:
+            # 保存原始图片到本地
+            with open(img_local_filename, 'wb') as f:
+                f.write(response.content)
+
+            # 调整图片大小
+            resized_img = self.resize_image(img_local_filename)
+            resized_img.save(img_local_filename)
+
+            print(f"电影<{movie_name}>图片已成功保存并调整大小到: {img_local_filename}")
+            movie_msg_dt['movie_img_src'] = f"{subject_id}.jpg"
+        else:
+            print(f"电影<{movie_name}>无法下载图片!!!")
+            movie_msg_dt['movie_img_src'] = None
+
+        return movie_msg_dt
+
+    def get_movie_all_msg(self, movie_name):
         # 读取电影信息核心函数
         soup = self.get_movie_msg_all(movie_name)
         movie_msg_dt = self.calculate_movie_msg(soup)
         if movie_msg_dt is not None:
-            movie_msg_df = self.movie_msg_df_constitute(movie_msg_dt, movie_name)
+            # 获取图片
+            movie_msg_dt1 = self.movie_img_get(movie_msg_dt)
+            # 整合数据信息
+            movie_msg_df = self.movie_msg_df_constitute(movie_msg_dt1, movie_name)
             self.pf.write_sqlite_db(movie_msg_df, 'movie_msg')
             print(f"电影<{movie_name}>的相关数据已经写入表中")
         else:
