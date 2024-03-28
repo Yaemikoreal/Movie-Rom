@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 from data_entry.PublicFunctions import PublicFunctions
-from algo.my_decorator import timer
+from algo.MyDecorator import timer
 
 '''
 该脚本用于:

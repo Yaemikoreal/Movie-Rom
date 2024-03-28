@@ -1,6 +1,6 @@
 import sqlite3
 import pandas as pd
-from algo.my_decorator import timer
+from algo.MyDecorator import timer
 from data_entry.PublicFunctions import PublicFunctions
 
 """

@@ -2,7 +2,7 @@ import requests
 import parsel
 from sqlalchemy import create_engine
 import pandas as pd
-from algo.my_decorator import timer
+from algo.MyDecorator import timer
 
 '''
 1、明确需求:
