@@ -2,6 +2,8 @@ import json
 
 import requests
 from django.shortcuts import render, HttpResponse
+
+from algo.ReadMovieImgRandom import ReadMovieImgRandom
 from .models import Moviereal
 from django.http import JsonResponse
 from django.contrib.auth import authenticate
@@ -19,7 +21,6 @@ def userlogin(request):
     :param request:
     :return:
     """
-
     if request.method == 'POST':
         data = json.loads(request.body)
         # 处理表单提交逻辑
@@ -45,19 +46,14 @@ def userlogin(request):
 
 def index(request):
     """首页"""
-    # 通过模型获取数据库中的商品列表数据
-    # Moviereal类--》表 objects对象 ---》表的记录
-    goods_list = Moviereal.objects.all()
-    print(goods_list)
-    # return HttpResponse("商品首页")
-    # 向模板页面传递的参数， 以字典的形式封装在context中
-    context = {
-        'infos': goods_list
-    }
-    # return HttpResponse("商品首页") 渲染
-    # request: http 请求参数 ，index.html：模板页面 context：传给模板页面的参数
-    return render(request, 'index.html', context)
-    # return HttpResponse("商品首页")
+    if request.method == 'GET':
+        obj = ReadMovieImgRandom()
+        data_df = obj.calculate()
+        json_data = data_df.to_json(orient='records')
+        context = json.loads(json_data)
+        return render(request, 'index.html', {'movies': context})
+
+
 
 
 def detail(request, goods_id):

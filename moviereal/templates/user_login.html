@@ -76,8 +76,9 @@
      .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // 示例：用户登录成功后保存用户名和密码信息到 Session Storage
-                    saveUserInfoToSessionStorage("exampleUser", "examplePassword");
+                    // 用户登录成功后将用户名信息存储在 Session Storage 中
+                    sessionStorage.setItem('username', username);
+                    console.log(sessionStorage);
                     alert(data.message); // 在页面中显示一个提示框
                     window.location.href = '/moviereal/index'; // 跳转到下个页面
                 } else {
@@ -88,11 +89,6 @@
                 console.error('Error:', error);
             });
         });
-// 用户登录成功后将用户名和密码信息存储在 Session Storage 中
-function saveUserInfoToSessionStorage(username, password) {
-    sessionStorage.setItem('username', username); // 将用户名存储在 Session Storage 中
-    sessionStorage.setItem('password', password); // 将密码存储在 Session Storage 中
-}
 
 function getCookie(name) {
     var cookieValue = null;
