@@ -87,6 +87,62 @@
             padding: 10px;
             border-radius: 5px;
         }
+        /* 页码按钮样式 */
+        .page-btn {
+            background-color: #4CAF50; /* 绿色背景 */
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .page-btn:hover {
+            background-color: #45a049; /* 鼠标悬停时深绿色背景 */
+        }
+
+        /* 页数跳转器样式 */
+        #page-jumper {
+            margin-bottom: 10px;
+        }
+
+        #page-input {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-right: 5px;
+        }
+
+        /* 跳转按钮样式 */
+        #jump-btn {
+            background-color: #008CBA; /* 蓝色背景 */
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        #jump-btn:hover {
+            background-color: #007aaf; /* 鼠标悬停时深蓝色背景 */
+        }
+
+        /* 电影边框 */
+        #movie-container-wrapper {
+            border: 3px solid #ccc; /* 边框 */
+            padding: 10px; /* 可选：添加内边距以增加内容与边框之间的空间 */
+        }
+
+        /* 页码容器和页数跳转器样式 */
+        .pagination-wrapper {
+            text-align: center; /* 居中 */
+            margin-top: 20px; /* 调整页码容器与影视推荐容器之间的间距 */
+        }
     </style>
 </head>
 <body>
@@ -97,21 +153,35 @@
     <hr>
     <div class="content">
         <h2 id="main-title">影视推荐</h2>
+        <!-- 新添加的容器，用于展示电影 -->
+        <div id="movie-container-wrapper">
         <div class="movie-container">
             {% for movie in movies %}
-                <div class="movie">
-                    {% if movie.image %}
-                        <img src="../../static/img/{{ movie.image }}" alt="Movie Image">
-                    {% else %}
-                        <img src="../../static/img/test.jpg" alt="Default Image">
-                    {% endif %}
-                    <div class="movie-info">
-                        <!-- 在电影标题上添加点击事件 -->
-                        <h2 class="movie-title" data-image="{{ movie.image }}">{{ movie.title }}</h2>
-                        <p>{{ movie.description }}</p>
+                    <div class="movie">
+                        {% if movie.image %}
+                            <img src="../../static/img/{{ movie.image }}" alt="Movie Image">
+                        {% else %}
+                            <img src="../../static/img/test.jpg" alt="Default Image">
+                        {% endif %}
+                        <div class="movie-info">
+                            <!-- 在电影标题上添加点击事件 -->
+                            <h2 class="movie-title" data-image="{{ movie.image }}">{{ movie.title }}</h2>
+                            <p>{{ movie.description }}</p>
+                        </div>
                     </div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+        <div class="pagination-wrapper">
+            <!-- 页码按钮 -->
+            <div id="pagination">
+                <!-- JavaScript会动态生成页码按钮 -->
+            </div>
+            <!-- 页数跳转器 -->
+            <div id="page-jumper">
+                <label for="page-input"></label><input type="text" id="page-input" placeholder="输入页码">
+                <button id="jump-btn">跳转</button>
+            </div>
         </div>
     </div>
     <script>
@@ -165,12 +235,105 @@
             });
         });
 
+
         // 右上角的欢迎用户
         var username = sessionStorage.getItem('username');
         if (username) {
             var usernameDisplay = document.getElementById('username-display');
             usernameDisplay.textContent = '欢迎，' + username;
         }
+
+
+        // 获取影视列表容器和影视数量
+        var movieContainer = document.querySelector('.movie-container');
+        var movieCount = movieContainer.children.length;
+
+        // 计算总页数
+        var pageCount = Math.ceil(movieCount / 12); // 假设每页显示12个电影
+
+        // 生成页码按钮
+        var paginationContainer = document.getElementById('pagination');
+        for (var i = 1; i <= pageCount; i++) {
+            var pageBtn = document.createElement('button');
+            pageBtn.textContent = i;
+            pageBtn.classList.add('page-btn');
+            pageBtn.dataset.page = i;
+            paginationContainer.appendChild(pageBtn);
+            // 使用立即调用函数表达式（IIFE）创建闭包
+            (function(pageNum) {
+                pageBtn.addEventListener('click', function(event) {
+                    showMoviesByPage(pageNum);
+                });
+            })(i); // 传入当前页数作为参数
+        }
+
+        {#// 上一页下一页按钮逻辑#}
+        {#// 创建上一页按钮#}
+        {#var prevBtn = document.createElement('button');#}
+        {#prevBtn.textContent = '上一页';#}
+        {#prevBtn.classList.add('page-btn');#}
+        {#prevBtn.dataset.page = 'prev';#}
+        {#paginationContainer.insertBefore(prevBtn, paginationContainer.firstChild);#}
+        {##}
+        {#// 创建下一页按钮#}
+        {#var nextBtn = document.createElement('button');#}
+        {#nextBtn.textContent = '下一页';#}
+        {#nextBtn.classList.add('page-btn');#}
+        {#nextBtn.dataset.page = 'next';#}
+        {#paginationContainer.appendChild(nextBtn);#}
+        {##}
+        {#// 添加点击事件监听器#}
+        {#paginationContainer.addEventListener('click', function(event) {#}
+        {#    var target = event.target;#}
+        {#    if (target.tagName === 'BUTTON') {#}
+        {#        var currentPage = parseInt(document.querySelector('.current-page').textContent);#}
+        {#        var targetPage = target.dataset.page;#}
+        {##}
+        {#        if (targetPage === 'prev') {#}
+        {#            if (currentPage > 1) {#}
+        {#                showMoviesByPage(currentPage - 1);#}
+        {#                document.querySelector('.current-page').textContent = currentPage - 1;#}
+        {#            }#}
+        {#        } else if (targetPage === 'next') {#}
+        {#            if (currentPage < pageCount) {#}
+        {#                showMoviesByPage(currentPage + 1);#}
+        {#                document.querySelector('.current-page').textContent = currentPage + 1;#}
+        {#            }#}
+        {#        } else {#}
+        {#            var pageNum = parseInt(targetPage);#}
+        {#            showMoviesByPage(pageNum);#}
+        {#            document.querySelector('.current-page').textContent = pageNum;#}
+        {#        }#}
+        {#    }#}
+        {#});#}
+        // 默认显示第一页的电影
+        showMoviesByPage(1);
+
+        // 显示指定页数的电影
+        function showMoviesByPage(pageNum) {
+            var moviesPerPage = 12; // 每页显示12个电影
+            var startIndex = (pageNum - 1) * moviesPerPage;
+            var endIndex = startIndex + moviesPerPage;
+            var movies = document.querySelectorAll('.movie');
+            movies.forEach(function(movie, index) {
+                if (index >= startIndex && index < endIndex) {
+                    movie.style.display = 'block';
+                } else {
+                    movie.style.display = 'none';
+                }
+            });
+        }
+        // 页数跳转器
+        var jumpBtn = document.getElementById('jump-btn');
+        jumpBtn.addEventListener('click', function() {
+            var pageNumInput = document.getElementById('page-input').value;
+            var pageNum = parseInt(pageNumInput);
+            if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= pageCount) {
+                showMoviesByPage(pageNum);
+            } else {
+                alert('请输入有效的页码！');
+            }
+        });
     });
     </script>
 </body>
