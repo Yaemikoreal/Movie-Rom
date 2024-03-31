@@ -34,6 +34,25 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             border-radius: 5px;
             box-sizing: border-box;
+            position: relative; /* 添加相对定位 */
+        }
+        /* 创建电影框覆盖层 */
+        .movie::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0); /* 初始为透明 */
+            z-index: 1; /* 确保覆盖在图片之上 */
+            transition: background-color 0.3s ease; /* 添加过渡效果 */
+        }
+
+        /* 添加鼠标悬停事件，改变覆盖层的背景色 */
+        .movie:hover::before {
+            background-color: rgba(0, 0, 0, 0.1); /* 半透明黑色 */
+            transition: background-color 0.5s ease; /* 改为0.5秒的过渡效果 */
         }
         .movie img {
             max-width: 100%;
@@ -54,6 +73,7 @@
             border-top: 3px solid #ccc;
             clear: both;
         }
+        /* 左上角标题样式 */
         #main-title {
             text-align: left;
             font-size: 24px;
@@ -86,7 +106,8 @@
                         <img src="../../static/img/test.jpg" alt="Default Image">
                     {% endif %}
                     <div class="movie-info">
-                        <h2>{{ movie.title }}</h2>
+                        <!-- 在电影标题上添加点击事件 -->
+                        <h2 class="movie-title" data-image="{{ movie.image }}">{{ movie.title }}</h2>
                         <p>{{ movie.description }}</p>
                     </div>
                 </div>
@@ -94,13 +115,63 @@
         </div>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var username = sessionStorage.getItem('username');
-            if (username) {
-                var usernameDisplay = document.getElementById('username-display');
-                usernameDisplay.textContent = '欢迎，' + username;
-            }
+    document.addEventListener('DOMContentLoaded', function() {
+        // 获取标题元素
+        var titleElement = document.getElementById('main-title');
+
+        // 添加点击事件监听器
+        titleElement.addEventListener('click', function() {
+            // 刷新当前页面
+            location.reload();
         });
+
+
+
+        // 获取所有电影框元素
+        var movieContainers = document.querySelectorAll('.movie');
+
+        // 为每个电影框添加点击事件监听器
+        movieContainers.forEach(function(container) {
+            container.addEventListener('click', function() {
+                // 获取电影标题元素
+                var title = container.querySelector('.movie-title');
+
+                // 获取电影图片的文件名
+                var imageFilename = title.dataset.image;
+
+                // 从文件名中提取豆瓣电影ID
+                var doubanId = imageFilename.split('.')[0];
+
+                // 检查豆瓣电影ID是否为null
+                if (doubanId === 'None') {
+                    // 弹出弹窗显示消息
+                    alert('抱歉，当前没有该电影的具体信息！');
+                } else {
+                    // 跳转到豆瓣页面
+                    window.location.href = 'https://movie.douban.com/subject/' + doubanId + '/';
+                }
+            });
+
+            // 添加鼠标悬停事件监听器以突出显示电影标题
+            container.addEventListener('mouseover', function() {
+                var title = container.querySelector('.movie-title');
+                title.style.color = 'blue'; // 可以根据需要更改高亮样式
+            });
+
+            // 添加鼠标离开事件监听器以恢复电影标题默认样式
+            container.addEventListener('mouseout', function() {
+                var title = container.querySelector('.movie-title');
+                title.style.color = ''; // 恢复默认颜色
+            });
+        });
+
+        // 右上角的欢迎用户
+        var username = sessionStorage.getItem('username');
+        if (username) {
+            var usernameDisplay = document.getElementById('username-display');
+            usernameDisplay.textContent = '欢迎，' + username;
+        }
+    });
     </script>
 </body>
 </html>
