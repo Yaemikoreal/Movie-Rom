@@ -16,7 +16,8 @@ from algo.MyDecorator import timer
 
 '''
 该脚本用于:
-    获取电影的subject_id以及标签和一些基础信息
+    获取电影的subject_id以及标签和一些基础信息，
+    以及电影的图片信息获取。
 '''
 
 

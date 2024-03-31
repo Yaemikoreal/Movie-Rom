@@ -47,6 +47,7 @@ def userlogin(request):
 def index(request):
     """首页"""
     if request.method == 'GET':
+        #  从表中读出随机三十个的电影信息
         obj = ReadMovieImgRandom()
         data_df = obj.calculate()
         json_data = data_df.to_json(orient='records')

@@ -8,8 +8,7 @@ from algo.MyDecorator import timer
 '''
 该脚本用于:
     1.爬取豆瓣最受欢迎以及最新的影评（会每日更新）(该脚本主要实现),
-    2.同步user_msg表中的user_id信息(调用CalculateUserMsg);
-    3.同步movie_msg表中的movie_id信息(调用CalculateUserMsg)。
+    2.同步user_msg表中的user_id信息(调用CalculateUserMsg)。
 '''
 
 

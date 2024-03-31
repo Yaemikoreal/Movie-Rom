@@ -1,12 +1,7 @@
 import os
-import random
 import sqlite3
 import time
-
-import pandas as pd
-import requests
 from bs4 import BeautifulSoup
-
 from algo.MyDecorator import timer
 from data_entry.DataMovieMsgGetter import DataMovieMsgGetter
 from data_entry.PublicFunctions import PublicFunctions
@@ -15,8 +10,9 @@ from selenium.webdriver.edge.options import Options
 from selenium.webdriver.edge.service import Service
 
 """
-对没有图片的电影进行图片信息获取
+该脚本用于对没有图片的电影进行图片信息获取
 """
+
 
 class MovieImgGetter:
     def __init__(self):
@@ -26,7 +22,7 @@ class MovieImgGetter:
         self.movie_msgget = DataMovieMsgGetter()
         # 原有的movie_msg表信息
         self.movie_msg_df = self.pf.read_table_all("movie_msg")
-        #
+        # 设置 WebDriver 对象
         self.edge_options = self.set_edge_options()
         self.service = self.set_service()
         # 数据库路径
@@ -45,11 +41,12 @@ class MovieImgGetter:
         script_dir = os.path.dirname(script_dir)
         # 构建数据库文件的路径
         driver_path = os.path.join(script_dir, r"edgedriver/msedgedriver.exe")
-        # 创建 Edge WebDriver 的 Service
+        # 使用拼接得到的驱动程序路径来创建 Edge WebDriver 的 Service 对象。
         service = Service(driver_path)
         return service
 
     def set_edge_options(self):
+        # 指定了 Edge 浏览器的选项，这是一个包含了一系列配置选项的对象，用于定制浏览器的行为，比如设置代理、窗口大小、用户代理等。
         # 反检测设置 #
         edge_options = Options()
         # 开启开发者模式
@@ -63,7 +60,7 @@ class MovieImgGetter:
         return edge_options
 
     def get_movie_msg_all(self, movie_name):
-        # 创建Edge WebDriver
+        # 创建Edge WebDriver，Edge 浏览器的 WebDriver 对象，该对象将用于控制 Edge 浏览器进行自动化操作。
         driver = webdriver.Edge(service=self.service, options=self.edge_options)
         url = f"https://search.douban.com/movie/subject_search?search_text={movie_name}"
         # 打开页面

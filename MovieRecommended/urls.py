@@ -26,7 +26,7 @@ urlpatterns = [
     path('moviereal/', moviereal.views.moviereal),
 
     # https://www.xxxx.com/moviereal/userlogin --> 到moviereal应用的view中找userlogin函数
-    path('', moviereal.views.userlogin, name='userlogin'),
+    path('moviereal/userlogin', moviereal.views.userlogin, name='userlogin'),
 
     # 测试页面，用于展示
     path('moviereal/index', moviereal.views.index, name='index'),
