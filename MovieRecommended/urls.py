@@ -30,6 +30,10 @@ urlpatterns = [
 
     # 测试页面，用于展示
     path('moviereal/index', moviereal.views.index, name='index'),
+
+    # 获取用户信息，从django默认用户表中
+    path('moviereal/userlogmsg', moviereal.views.userlogmsg, name='userlogmsg'),
+
     # path('detail/', moviereal.views.detail, name='detail'),
     path('detail/<int:goods_id>/', moviereal.views.detail, name='detail'),
 ]

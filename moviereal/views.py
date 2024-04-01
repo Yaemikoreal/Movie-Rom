@@ -1,9 +1,9 @@
 import json
-
 import requests
 from django.shortcuts import render, HttpResponse
-
+from datetime import datetime
 from algo.ReadMovieImgRandom import ReadMovieImgRandom
+from data_entry.ReadUserLogMsg import ReadUserLogMsg
 from .models import Moviereal
 from django.http import JsonResponse
 from django.contrib.auth import authenticate
@@ -55,6 +55,16 @@ def index(request):
         return render(request, 'index.html', {'movies': context})
 
 
+def userlogmsg(request):
+    # 获取传递过来的用户名参数
+    username = request.GET.get('username', None)
+    if username:
+        # 如果用户名存在，进行处理
+        obj = ReadUserLogMsg()
+        user_dt = obj.calculate(username=username)
+        # 将字典转换为 JSON 字符串
+        json_string = json.dumps(user_dt)
+        return HttpResponse(json_string)
 
 
 def detail(request, goods_id):
