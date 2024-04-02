@@ -79,10 +79,11 @@ class CalculateUserMsg:
         for row in result_dt:
             cursor.execute('UPDATE user_msg SET movie_count = ? WHERE user_name = ?',
                            (row.get('movie_count'), row.get('user_name')))
-            print(f"成功更新用户<{row.get('user_name')}>的观影数量为:<{row.get('movie_count')}>")
+            # print(f"成功更新用户<{row.get('user_name')}>的观影数量为:<{row.get('movie_count')}>")
         # 提交更改并关闭连接
         conn.commit()
         conn.close()
+        print("成功更新用户观影数!")
 
     @timer
     def calculate(self):
