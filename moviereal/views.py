@@ -34,7 +34,6 @@ def userlogin(request):
         authenticated_user = authenticate(request, username=username, password=password)
 
         if authenticated_user is not None:
-            # 认证成功，可以返回一个成功页面或重定向到其他页面
             # 验证成功，返回成功信息给前端
             response_data = {'success': True, 'message': '登录成功!'}
             return JsonResponse(response_data)
@@ -71,8 +70,8 @@ def userregister(request):
         # 创建用户对象
         try:
             # 使用 User.objects.create_user 方法创建用户时，Django 会自动处理密码的加密，并将用户对象（包括加密后的密码）保存到 auth_user 表中。
-            user = User.objects.create_user(username=data["username"],
-                                            email=data["email"], password=data["password"], first_name=data["name"])
+            user = User.objects.create_user(username=data["username"], email=data["email"], password=data["password"],
+                                            first_name=data["name"][0:1], last_name=data["name"][1:])
             user.save()
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
@@ -105,6 +104,8 @@ def userlogmsg(request):
         user_dt = obj.calculate(username=username, static=1)
         # 将字典转换为 JSON 字符串
         json_string = json.dumps(user_dt)
+        # 认证成功，更新用户登录时间信息
+        obj.calculate(username=username, static=2)
         return HttpResponse(json_string)
 
 

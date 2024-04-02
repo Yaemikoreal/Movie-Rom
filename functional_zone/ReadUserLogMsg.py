@@ -1,12 +1,12 @@
 import sqlite3
 import pandas as pd
-
+from datetime import datetime
 from data_entry.PublicFunctions import PublicFunctions
-
 
 """
 获取用户基本信息用于展示
 """
+
 
 class ReadUserLogMsg():
     def __init__(self):
@@ -43,6 +43,16 @@ class ReadUserLogMsg():
             user_information_dt['nickname'] = "暂无"
         return user_information_dt
 
+    def insert_last_login_time(self, formatted_time, username):
+        # 更新最后一次登录时间信息
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        # 更新表格中的数据
+        cursor.execute('UPDATE auth_user SET last_login = ? WHERE username = ?', (formatted_time, username))
+        # 提交更改并关闭连接
+        conn.commit()
+        conn.close()
+
     def calculate(self, username, static):
         # 当static等于1时，获取用户信息
         if static == 1:
@@ -52,13 +62,17 @@ class ReadUserLogMsg():
             return user_information_dt
         # 当static等于2时，写入当前用户的登录信息
         elif static == 2:
-            pass
+            # 获取当前时间
+            current_time = datetime.now()
+            # 将时间格式化为指定格式
+            formatted_time = current_time.strftime('%Y-%m-%d %H:%M:%S.%f')
+            self.insert_last_login_time(formatted_time, username)
 
 
 def main():
     username = 'Yaemiko'
     obj = ReadUserLogMsg()
-    obj.calculate(username)
+    obj.calculate(username, 1)
 
 
 def main_test():
