@@ -6,7 +6,6 @@ from data_entry.PublicFunctions import PublicFunctions
 """
 该脚本用于:
     1.同步user_msg表中的user_id信息;
-    # 2.同步movie_msg表中的movie_id信息。
 """
 
 
@@ -23,7 +22,7 @@ class CalculateUserMsg:
         self.pf = PublicFunctions()
         # 数据库路径
         self.db_path = self.pf.path_get()
-        #
+        # 用户评论df
         self.movie_comments_df = self.pf.read_table_all('movie_data_comment')
 
     def inspect_user_name(self, user_name):
@@ -33,17 +32,6 @@ class CalculateUserMsg:
             f"SELECT * FROM user_msg WHERE user_name = '{user_name}'", conn)
         conn.close()
         # 如果data_df为空则说明表中没有该用户信息需要写入
-        if data_df.empty:
-            return True
-        return False
-
-    def inspect_movie_name(self, movie_name):
-        conn = sqlite3.connect(self.db_path)
-        # 从数据库中读取表格数据到 DataFrame
-        data_df = pd.read_sql_query(
-            f"SELECT * FROM movie_msg WHERE movie_name = '{movie_name}'", conn)
-        conn.close()
-        # 如果data_df为空则说明表中没有该电影信息需要写入
         if data_df.empty:
             return True
         return False
@@ -60,6 +48,7 @@ class CalculateUserMsg:
                 }
                 self.user_msg_list.append(user_msg_dt)
 
+    @timer
     def calculate_user_msg(self):
         # 读取出数据内容
         user_msg_df = self.pf.read_table_all('user_msg')
@@ -73,83 +62,34 @@ class CalculateUserMsg:
         # 写入
         self.pf.write_sqlite_db(user_msg_df, 'user_msg')
 
-    # def update_movie_msg(self):
-    #     if len(self.user_msg_list_old) == 0:
-    #         print("Movie_msg表已有电影评分无需更新！")
-    #         return
-    #     movie_msg_list = self.user_msg_list_old.copy()
-    #     for it in movie_msg_list:
-    #         conn = sqlite3.connect(self.db_path)
-    #         cursor = conn.cursor()
-    #         # average_score = it.get('average_score')
-    #         movie_name = it.get('movie_name')
-    #         # 使用占位符 ? 来防止 SQL 注入，并指定要更新的列和设置的值
-    #         sql = "UPDATE movie_msg SET average_score = ? WHERE movie_name = ?"
-    #         # 执行 SQL 更新语句
-    #         cursor.execute(sql, (average_score, movie_name))
-    #         # 提交事务
-    #         conn.commit()
-    #         cursor.close()
-    #         conn.close()
-    #     print('Movie_msg表已有电影评分已更新！')
+    @timer
+    def calculate_movie_count(self):
+        # 使用 value_counts() 方法计算每个用户名出现的次数
+        username_counts = self.movie_comments_df['user_name'].value_counts()
+        # 将结果转换为列表套字典的形式
+        result_dt = [{'user_name': username, 'movie_count': count} for username, count in username_counts.items()]
+        self.insert_movie_count(result_dt)
+        print("更新成功！")
 
-    def processing_movie_information(self, movie_name_list):
-        for movie in movie_name_list:
-            movie_status = self.inspect_movie_name(movie)
-            # 计算出该电影的平均评分
-            filtered_df = self.movie_comments_df[self.movie_comments_df['movie_name'] == movie].copy()
-            # average_score = filtered_df['movie_rating'].mean()
-            # average_score = round(average_score, 1)
-            # start_id += 1
-            movie_dt = {
-                # "movie_id": start_id,
-                "movie_name": movie,
-                # "average_score": average_score
-            }
-            if movie_status:
-                self.movie_msg_list.append(movie_dt)
-            else:
-                self.user_msg_list_old.append(movie_dt)
-
-    # def write_movie_msg(self):
-    #     if len(self.movie_msg_list) == 0:
-    #         print("Movie_msg表没有需要更新的内容！")
-    #         return
-    #     movie_msg_list = self.user_msg_list.copy()
-    #     for it in movie_msg_list:
-    #         conn = sqlite3.connect(self.db_path)
-    #         cursor = conn.cursor()
-    #         movie_id = it.get('movie_id')
-    #         average_score = it.get('average_score')
-    #         movie_name = it.get('movie_name')
-    #         # 使用占位符 ? 来防止 SQL 注入，并指定要更新的列和设置的值
-    #         sql = "INSERT INTO movie_msg (movie_id, average_score, movie_name) VALUES (?, ?, ?);"
-    #         # 执行 SQL 更新语句
-    #         cursor.execute(sql, (movie_id, average_score, movie_name))
-    #         # 提交事务
-    #         conn.commit()
-    #         cursor.close()
-    #         conn.close()
-    #     print('Movie_msg表已更新未有内容！')
-
-    def calculate_movie_msg(self):
-        # 读取出数据内容
-        # movie_msg_df = self.pf.read_table_all('movie_msg')
-        # 获取不重复的 movie_name 列并转换为列表
-        movie_name_list = self.movie_comments_df['movie_name'].unique().tolist()
-        # 对电影数据进行处理
-        self.processing_movie_information(movie_name_list)
-        movie_msg_list_df = pd.DataFrame(self.movie_msg_list)
-        #  写入
-        self.pf.write_sqlite_db(movie_msg_list_df, 'movie_msg')
+    def insert_movie_count(self, result_dt):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        # 将数据插入到表格中
+        # 更新表格中的数据
+        for row in result_dt:
+            cursor.execute('UPDATE user_msg SET movie_count = ? WHERE user_name = ?',
+                           (row.get('movie_count'), row.get('user_name')))
+            print(f"成功更新用户<{row.get('user_name')}>的观影数量为:<{row.get('movie_count')}>")
+        # 提交更改并关闭连接
+        conn.commit()
+        conn.close()
 
     @timer
     def calculate(self):
         # 对user_msg表根据movie_data_comment表数据进行同步更新
         self.calculate_user_msg()
-        # # 对movie_msg表根据movie_data_comment表数据进行同步更新
-        # self.calculate_movie_msg()
-
+        # 对user_msg表已有用户添加movie_count计数
+        self.calculate_movie_count()
 
 
 def main_test():
