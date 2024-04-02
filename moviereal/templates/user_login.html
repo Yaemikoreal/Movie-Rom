@@ -7,6 +7,7 @@
     <title>User Login</title>
     <style>
         body {
+            background-color: #f0f8ff; /* 淡蓝色 */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -35,6 +36,31 @@
         .form-title {
             margin-bottom: 10px;
         }
+        #loginForm {
+            border: 2px solid #ccc;
+            border-radius: 10px; /* 设置边框四角为圆形 */
+            padding: 20px;
+            width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .page-btn {
+            background-color: #4CAF50; /* 绿色背景 */
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .page-btn:hover {
+            background-color: #45a049; /* 鼠标悬停时深绿色背景 */
+        }
     </style>
 </head>
 
@@ -42,68 +68,73 @@
     <form id="loginForm" method="post">
         {% csrf_token %}
         <h1 class="form-title">电影推荐登录</h1>
-        <label for="username">Username:</label>
+        <label for="username">用户名:</label>
         <input type="text" id="username" name="username"><br>
 
-        <label for="password">Password:</label>
+        <label for="password">密码:</label>
         <input type="password" id="password" name="password"><br>
 
-        <button type="submit">login</button>
+        <button type="submit" class="page-btn">登录</button>
+        <button class="page-btn" onclick="redirectToPage()">注册</button>
     </form>
 
-   <script>
-    document.getElementById('loginForm').addEventListener('submit', function(event) {
-    event.preventDefault(); // 阻止表单默认提交行为
+    <script>
+        // 注册按钮跳转
+    function redirectToPage() {
+        window.location.href = "userregister";
+    }
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // 阻止表单默认提交行为
 
-    var username = document.getElementById('username').value; // 获取用户名输入框的值
-    var password = document.getElementById('password').value; // 获取密码输入框的值
+            const username = document.getElementById('username').value; // 获取用户名输入框的值
+            const password = document.getElementById('password').value; // 获取密码输入框的值
 
-    var data = {
-        'username': username,
-        'password': password
-    };
+            const data = {
+                'username': username,
+                'password': password
+            };
 
-    var csrftoken = getCookie('csrftoken'); // 从 cookie 中获取 CSRF 令牌
+            const csrftoken = getCookie('csrftoken'); // 从 cookie 中获取 CSRF 令牌
 
-    fetch('/moviereal/userlogin', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken // 在请求头中添加 CSRF 令牌
-        },
-        body: JSON.stringify(data)
-    })
-     .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // 用户登录成功后将用户名信息存储在 Session Storage 中
-                    sessionStorage.setItem('username', username);
-                    console.log(sessionStorage);
-                    alert(data.message); // 在页面中显示一个提示框
-                    window.location.href = '/moviereal/index'; // 跳转到下个页面
-                } else {
-                    alert(data.message); // 如果验证失败，显示错误提示
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+            fetch('/moviereal/userlogin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken // 在请求头中添加 CSRF 令牌
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 用户登录成功后将用户名信息存储在 Session Storage 中
+                        sessionStorage.setItem('username', username);
+                        console.log(sessionStorage);
+                        alert(data.message); // 在页面中显示一个提示框
+                        window.location.href = '/moviereal/index'; // 跳转到下个页面
+                    } else {
+                        alert(data.message); // 如果验证失败，显示错误提示
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
         });
 
-function getCookie(name) {
-    var cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
             }
+            return cookieValue;
         }
-    }
-    return cookieValue;
-}
 
     </script>
 </body>

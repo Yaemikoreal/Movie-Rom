@@ -1,18 +1,21 @@
 import json
-import requests
-from django.shortcuts import render, HttpResponse
-from datetime import datetime
+from django.shortcuts import render, HttpResponse, redirect
 from algo.ReadMovieImgRandom import ReadMovieImgRandom
-from data_entry.ReadUserLogMsg import ReadUserLogMsg
+from functional_zone.ReadUserLogMsg import ReadUserLogMsg
+from functional_zone.UserRegister import UserRegister
 from .models import Moviereal
-from django.http import JsonResponse
 from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
+from django.http import JsonResponse, HttpResponseRedirect
+from django.urls import reverse
 
 
 # Create your views here.
 
 def moviereal(request):
-    return HttpResponse("欢迎访问moviereal!")
+    # 重定向到用户登录页面
+    return redirect('/moviereal/userlogin')
 
 
 def userlogin(request):
@@ -32,7 +35,7 @@ def userlogin(request):
 
         if authenticated_user is not None:
             # 认证成功，可以返回一个成功页面或重定向到其他页面
-            # 假设验证成功，返回成功信息给前端
+            # 验证成功，返回成功信息给前端
             response_data = {'success': True, 'message': '登录成功!'}
             return JsonResponse(response_data)
         else:
@@ -42,6 +45,44 @@ def userlogin(request):
     else:
         # GET 请求时返回登录表单页面
         return render(request, 'user_login.html')
+
+
+def userregister(request):
+    """
+    用户注册
+    :param request:
+    :return:
+    """
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        # 处理表单提交逻辑
+
+        # 密码规则:
+        # 你的密码不能与你的其他个人信息太相似。
+        # 你的密码必须包含至少 8 个字符。
+        # 你的密码不能全都是数字。
+
+        obj = UserRegister()
+        static = obj.calculate(data)
+        if static:
+            response_data = {'success': False, 'message': static}
+            return JsonResponse(response_data)
+        # 创建用户对象
+        try:
+            # 使用 User.objects.create_user 方法创建用户时，Django 会自动处理密码的加密，并将用户对象（包括加密后的密码）保存到 auth_user 表中。
+            user = User.objects.create_user(username=data["username"],
+                                            email=data["email"], password=data["password"], first_name=data["name"])
+            user.save()
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        # 注册成功，返回成功信息
+        response_data = {'success': True, 'message': '用户注册成功！'}
+        return JsonResponse(response_data)
+    else:
+        # 如果不是POST请求，返回注册表单页面
+        return render(request, 'userregister.html')
 
 
 def index(request):
@@ -61,7 +102,7 @@ def userlogmsg(request):
     if username:
         # 如果用户名存在，进行处理
         obj = ReadUserLogMsg()
-        user_dt = obj.calculate(username=username)
+        user_dt = obj.calculate(username=username, static=1)
         # 将字典转换为 JSON 字符串
         json_string = json.dumps(user_dt)
         return HttpResponse(json_string)

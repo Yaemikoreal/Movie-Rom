@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Register</title>
+    <style>
+        body {
+            background-color: #f0f8ff; /* 淡蓝色 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        form {
+            text-align: center;
+            margin-top: 20px;
+            border: 2px solid #333;
+            padding: 20px;
+            width: 300px;
+        }
+
+        label {
+            display: inline-block;
+            text-align: right;
+            width: 80px; /* 设置固定宽度，根据需要调整 */
+        }
+
+        input {
+            width: 200px; /* 设置输入框宽度，根据需要调整 */
+        }
+
+        .form-title {
+            margin-bottom: 10px;
+        }
+        #loginForm {
+            border: 2px solid #ccc;
+            border-radius: 10px; /* 设置边框四角为圆形 */
+            padding: 20px;
+            width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .page-btn {
+            background-color: #4CAF50; /* 绿色背景 */
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .page-btn:hover {
+            background-color: #45a049; /* 鼠标悬停时深绿色背景 */
+        }
+    </style>
+</head>
+
+<body>
+    <form id="loginForm" method="post">
+        {% csrf_token %}
+        <h1 class="form-title">电影推荐注册</h1>
+        <label for="username">用户名:</label>
+        <input type="text" id="username" name="username"><br>
+
+        <label for="password">密码:</label>
+        <input type="password" id="password1" name="password1"><br>
+
+        <label for="password">确认密码:</label>
+        <input type="password" id="password2" name="password2"><br>
+
+        <label for="name">姓名</label>
+        <input type="text" id="name" name="name"><br>
+
+        <label for="email">邮箱</label>
+        <input type="text" id="email" name="email"><br>
+
+        <button type="submit" class="page-btn">注册</button>
+    </form>
+
+    <script>
+    document.getElementById('loginForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // 阻止表单默认提交行为
+
+        const username = document.getElementById('username').value; // 获取用户名输入框的值
+        const password = document.getElementById('password1').value; // 获取密码输入框的值
+        const passwordConfirm = document.getElementById('password2').value; // 获取确认密码输入框的值
+        const name = document.getElementById('name').value; // 获取姓名输入框的值
+        const email = document.getElementById('email').value; // 获取邮箱输入框的值
+
+        // 验证密码是否匹配
+        if (password !== passwordConfirm) {
+            alert('密码和确认密码不匹配，请重新输入！');
+            return;
+        }
+
+        const data = {
+            'username': username,
+            'password': password,
+            'name': name,
+            'email': email
+        };
+
+        const csrftoken = getCookie('csrftoken'); // 从 cookie 中获取 CSRF 令牌
+
+        fetch('/moviereal/userregister', { // 注册接口的URL是'/moviereal/userregister'
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken // 在请求头中添加 CSRF 令牌
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // 用户注册成功后可以在这里添加一些逻辑，比如跳转到登录页面或显示成功消息
+                alert(data.message); // 在页面中显示一个提示框
+                window.location.href = '/moviereal/userlogin';
+            } else {
+                // 注册失败，显示错误信息
+                alert(data.message || '注册失败，请稍后再试！');
+            }
+        })
+        .catch(error => {
+            console.error('There has been a problem with your fetch operation:', error);
+            alert('注册过程中发生错误，请稍后再试！');
+        });
+    });
+
+    // 假设这是从cookie中获取CSRF令牌的函数
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+</script>
+</body>
+
+</html>

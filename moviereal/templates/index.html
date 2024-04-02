@@ -237,13 +237,14 @@
     </div>
 
     <script>
-        // 推荐按钮跳转
-        function redirectToPage() {
+         // 推荐按钮跳转
+    function redirectToPage() {
         window.location.href = "/moviereal/index";
     }
+
     document.addEventListener('DOMContentLoaded', function() {
         // 获取标题元素
-        var titleElement = document.getElementById('main-title');
+        const titleElement = document.getElementById('main-title');
 
         // 添加点击事件监听器
         titleElement.addEventListener('click', function() {
@@ -251,22 +252,20 @@
             location.reload();
         });
 
-
-
         // 获取所有电影框元素
-        var movieContainers = document.querySelectorAll('.movie');
+        const movieContainers = document.querySelectorAll('.movie');
 
         // 为每个电影框添加点击事件监听器
         movieContainers.forEach(function(container) {
             container.addEventListener('click', function() {
                 // 获取电影标题元素
-                var title = container.querySelector('.movie-title');
+                const title = container.querySelector('.movie-title');
 
                 // 获取电影图片的文件名
-                var imageFilename = title.dataset.image;
+                const imageFilename = title.dataset.image;
 
                 // 从文件名中提取豆瓣电影ID
-                var doubanId = imageFilename.split('.')[0];
+                const doubanId = imageFilename.split('.')[0];
 
                 // 检查豆瓣电影ID是否为null
                 if (doubanId === 'None') {
@@ -280,30 +279,30 @@
 
             // 添加鼠标悬停事件监听器以突出显示电影标题
             container.addEventListener('mouseover', function() {
-                var title = container.querySelector('.movie-title');
+                const title = container.querySelector('.movie-title');
                 title.style.color = 'blue'; // 可以根据需要更改高亮样式
             });
 
             // 添加鼠标离开事件监听器以恢复电影标题默认样式
             container.addEventListener('mouseout', function() {
-                var title = container.querySelector('.movie-title');
+                const title = container.querySelector('.movie-title');
                 title.style.color = ''; // 恢复默认颜色
             });
         });
 
 
         // 右上角的欢迎用户
-        var username = sessionStorage.getItem('username');
+        const username = sessionStorage.getItem('username');
         if (username) {
-            var usernameDisplay = document.getElementById('username-display');
+            const usernameDisplay = document.getElementById('username-display');
             usernameDisplay.textContent = '欢迎，' + username;
             // 发送请求并附带用户名，从表中获取用户信息
-            var xhr = new XMLHttpRequest();
+            const xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4 && xhr.status === 200) {
-                    var responseData = JSON.parse(xhr.responseText);
+                    const responseData = JSON.parse(xhr.responseText);
                     // 将用户信息展示到页面
-                    var userLogMsgDiv = document.getElementById('user-container');
+                    const userLogMsgDiv = document.getElementById('user-container');
                     userLogMsgDiv.innerHTML = '<h2>用户信息'+'</h2>'+
                                               '<p>用户id：' + responseData.id + '</p>'+
                                               '<p>用户昵称：'+ responseData.nickname + '</p>'+
@@ -317,23 +316,23 @@
         }
 
         // 获取影视列表容器和影视数量
-        var movieContainer = document.querySelector('.movie-container');
-        var movieCount = movieContainer.children.length;
+        const movieContainer = document.querySelector('.movie-container');
+        const movieCount = movieContainer.children.length;
 
         // 计算总页数
-        var pageCount = Math.ceil(movieCount / 12); // 假设每页显示12个电影
+        const pageCount = Math.ceil(movieCount / 12); // 假设每页显示12个电影
 
         // 生成页码按钮
-        var paginationContainer = document.getElementById('pagination');
-        for (var i = 1; i <= pageCount; i++) {
-            var pageBtn = document.createElement('button');
+        const paginationContainer = document.getElementById('pagination');
+        for (let i = 1; i <= pageCount; i++) {
+            const pageBtn = document.createElement('button');
             pageBtn.textContent = i;
             pageBtn.classList.add('page-btn');
             pageBtn.dataset.page = i;
             paginationContainer.appendChild(pageBtn);
             // 使用立即调用函数表达式（IIFE）创建闭包
-            (function(pageNum) {
-                pageBtn.addEventListener('click', function(event) {
+            ((pageNum) => {
+                pageBtn.addEventListener('click', (event) => {
                     showMoviesByPage(pageNum);
                 });
             })(i); // 传入当前页数作为参数
@@ -344,11 +343,11 @@
 
         // 显示指定页数的电影
         function showMoviesByPage(pageNum) {
-            var moviesPerPage = 12; // 每页显示12个电影
-            var startIndex = (pageNum - 1) * moviesPerPage;
-            var endIndex = startIndex + moviesPerPage;
-            var movies = document.querySelectorAll('.movie');
-            movies.forEach(function(movie, index) {
+            const moviesPerPage = 12; // 每页显示12个电影
+            const startIndex = (pageNum - 1) * moviesPerPage;
+            const endIndex = startIndex + moviesPerPage;
+            const movies = document.querySelectorAll('.movie');
+            movies.forEach((movie, index) => {
                 if (index >= startIndex && index < endIndex) {
                     movie.style.display = 'block';
                 } else {
@@ -356,11 +355,12 @@
                 }
             });
         }
+
         // 页数跳转器
-        var jumpBtn = document.getElementById('jump-btn');
-        jumpBtn.addEventListener('click', function() {
-            var pageNumInput = document.getElementById('page-input').value;
-            var pageNum = parseInt(pageNumInput);
+        const jumpBtn = document.getElementById('jump-btn');
+        jumpBtn.addEventListener('click', () => {
+            const pageNumInput = document.getElementById('page-input').value;
+            const pageNum = parseInt(pageNumInput);
             if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= pageCount) {
                 showMoviesByPage(pageNum);
             } else {

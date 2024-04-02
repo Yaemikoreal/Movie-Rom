@@ -31,7 +31,11 @@ class ReadUserLogMsg():
         user_information_dt['username'] = auth_user_df['username'][0]
         user_information_dt['email'] = auth_user_df['email'][0]
         # 只保留日期部分
-        last_time = auth_user_df['last_login'][0][:10]
+        last_time = auth_user_df['last_login'][0]
+        if last_time:
+            last_time = auth_user_df['last_login'][0][:10]
+        else:
+            last_time = "没有登录记录！"
         user_information_dt['lastlogin'] = last_time
         if auth_user_df['last_name'][0] is not '' and auth_user_df['first_name'][0] is not '':
             user_information_dt['nickname'] = f"{auth_user_df['last_name'][0]}{auth_user_df['first_name'][0]}"
@@ -39,11 +43,16 @@ class ReadUserLogMsg():
             user_information_dt['nickname'] = "暂无"
         return user_information_dt
 
-    def calculate(self, username):
-        auth_user_df = self.read_auth_user(username)
-        # 整合用户信息
-        user_information_dt = self.integrate_user_information(auth_user_df)
-        return user_information_dt
+    def calculate(self, username, static):
+        # 当static等于1时，获取用户信息
+        if static == 1:
+            auth_user_df = self.read_auth_user(username)
+            # 整合用户信息
+            user_information_dt = self.integrate_user_information(auth_user_df)
+            return user_information_dt
+        # 当static等于2时，写入当前用户的登录信息
+        elif static == 2:
+            pass
 
 
 def main():
