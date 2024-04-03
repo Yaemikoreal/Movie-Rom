@@ -33,9 +33,22 @@ class UserRegister():
             return "你的密码不能全都是数字。"
         return False
 
+    def insert_user_msg(self, user_name):
+        # user_msg表中新加入该用户名，同时，观影量设置为0
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO user_msg (user_name, movie_count) VALUES (?, ?)", (user_name, 0))
+        # 提交更改并关闭连接
+        conn.commit()
+        conn.close()
+
     def calculate(self, user_dt):
         # 对用户信息进行验证
         static = self.user_information_verification(user_dt)
+        if not static:
+            # user_msg表中新加入该用户名，同时，观影量设置为0
+            user_name = user_dt.get('username')
+            self.insert_user_msg(user_name)
         return static
 
 
