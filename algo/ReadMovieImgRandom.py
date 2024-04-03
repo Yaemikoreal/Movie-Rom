@@ -1,10 +1,15 @@
+import random
 import sqlite3
 import pandas as pd
 
 from data_entry.PublicFunctions import PublicFunctions
 
 """
-随机读三十个电影信息以供前端页面显示
+1.随机读六十个电影信息以供index页面显示;
+2.推荐界面推荐一批用户很有可能看过的电影让其进行评分:
+        推荐要素：
+            1.从top250电影中抽取，作为这一批电影的大头,占2/3到3/4;
+            2.从电影表中抽取，在抽取的时候最新一年的不考虑(原因:太新了，看过的可能性要小一些)
 """
 
 
@@ -14,10 +19,14 @@ class ReadMovieImgRandom:
         self.pf = PublicFunctions()
         # 数据库路径
         self.db_path = self.pf.path_get()
+        #  豆瓣top250电影
+        self.movie_top250_df_y = self.pf.read_table_all('movie_data_top250')
+        # 电影信息df
+        self.movie_msg_df = self.pf.read_table_all('movie_msg')
 
     def read_movie_img(self):
         conn = sqlite3.connect(self.db_path)
-        # 从数据库中随机读取三十行数据到 DataFrame
+        # 从数据库中随机读取六十行数据到 DataFrame
         data_df = pd.read_sql_query("SELECT * FROM movie_msg ORDER BY RANDOM() LIMIT 60", conn)
         conn.close()
         return data_df
@@ -37,16 +46,44 @@ class ReadMovieImgRandom:
         })
         return data_df
 
-    def calculate(self):
-        data_df = self.read_movie_img()
-        # 处理电影标签
-        data_df = self.process_movie_tags(data_df)
+    def read_movie_df(self):
+        # 排除movie_msg_df中 movie_img 列中为 None 的行
+        filtered_df = self.movie_msg_df[self.movie_msg_df["movie_img"].notna()]
+        # 在movie_msg中读出top250的电影全部信息,用于用户评分
+        movie_top250_list = self.movie_top250_df_y['电影名字'].tolist()
+        movie_top250_df = filtered_df[filtered_df["movie_name"].isin(movie_top250_list)]
+        movie_not_in_top250_df = filtered_df[~filtered_df["movie_name"].isin(movie_top250_list)]
+        return movie_top250_df, movie_not_in_top250_df
+
+    def random_ten_movies(self, movie_top250_df, movie_not_in_top250_df):
+        # 从 DataFrame 中随机挑选 random_num 行，从经典电影和新电影中一共提取十个出来
+        random_num = random.randint(6, 8)
+        movie_top250_random_df = movie_top250_df.sample(n=random_num)
+        new_movie_df = movie_not_in_top250_df.sample(n=10 - random_num)
+        # 使用 concat() 函数将两个 DataFrame 合并在一起
+        data_df = pd.concat([movie_top250_random_df, new_movie_df])
         return data_df
+
+    def calculate(self, static):
+        if static == 'index':
+            # 读取出随机六十个电影展示
+            data_df = self.read_movie_img()
+            # 处理电影标签
+            data_df = self.process_movie_tags(data_df)
+            return data_df
+        elif static == 'recommendation':
+            # 将movie_msg表的电影信息分成经典电影和新电影,推荐逻辑为:从top250电影中推荐6-8个，从新电影中提取几个，一共十个
+            movie_top250_df, movie_not_in_top250_df = self.read_movie_df()
+            data_df = self.random_ten_movies(movie_top250_df, movie_not_in_top250_df)
+            # 处理电影标签
+            data_df = self.process_movie_tags(data_df)
+            return data_df
 
 
 def main():
+    static = 'recommendation'
     obj = ReadMovieImgRandom()
-    obj.calculate()
+    obj.calculate(static)
 
 
 def main_test():
