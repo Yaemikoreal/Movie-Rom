@@ -51,3 +51,12 @@ class PublicFunctions(object):
                 print("-----------------------------")
                 # 关闭数据库连接
                 conn.close()
+
+    def read_user_id(self, user_name):
+        # 获取该用户id用于推荐计算!
+        conn = sqlite3.connect(self.db_path)
+        # 从数据库中随机读取六十行数据到 DataFrame
+        data_df = pd.read_sql_query(f"SELECT * FROM user_msg WHERE user_name = '{user_name}'", conn)
+        conn.close()
+        user_id = data_df['user_id'].iloc[0]
+        return user_id

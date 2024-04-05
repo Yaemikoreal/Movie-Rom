@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -201,9 +202,9 @@
                 {% for movie in movies %}
                         <div class="movie">
                             {% if movie.image %}
-                                <img src="../../static/img/{{ movie.image }}" alt="Movie Image">
+                                <img src="{% static 'img/'|add:movie.image %}" alt="Movie Image">
                             {% else %}
-                                <img src="../../static/img/test.jpg" alt="Default Image">
+                                <img src="{% static 'img/test.jpg' %}" alt="Default Image">
                             {% endif %}
                             <div class="movie-info">
                                 <!-- 在电影标题上添加点击事件 -->
@@ -239,7 +240,7 @@
     <script>
          // 推荐按钮跳转
     function redirectToPage() {
-        window.location.href = "/moviereal/index";
+        window.location.href = "/moviereal/recommendation";
     }
 
     document.addEventListener('DOMContentLoaded', function() {

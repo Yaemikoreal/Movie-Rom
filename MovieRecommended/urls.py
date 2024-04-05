@@ -29,6 +29,12 @@ urlpatterns = [
     # userlogin函数
     path('moviereal/userlogin', moviereal.views.userlogin, name='userlogin'),
 
+    # 推荐页面
+    path('moviereal/recommendation',moviereal.views.recommendation, name='recommendation'),
+
+    # 推荐展示页面,接受 user_name 参数
+    path('moviereal/recommendation_show/<str:user_name>/', moviereal.views.recommendation_show, name='recommendation_show'),
+
     # 注册处理
     path('moviereal/userregister', moviereal.views.userregister, name='userregister'),
 

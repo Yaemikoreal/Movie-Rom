@@ -1,0 +1,137 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Yaemiko影视推荐</title>
+    <style>
+        body {
+            background-color: #f0f8ff; /* 淡蓝色 */
+            margin: 0;
+            padding: 0;
+            position: relative; /* 设置为相对定位的参考点 */
+        }
+
+        .sidebar {
+            width: 25%; /* 调整宽度为25% */
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .content {
+            width: 70%; /* 调整宽度为70% */
+            padding: 20px;
+            text-align: right;
+        }
+
+        .right-container {
+            flex-grow: 1;
+            background-color: #f0f8ff;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex; /* 使用 Flexbox 布局 */
+            flex-direction: column; /* 垂直方向排列子元素 */
+        }
+
+        .user-container {
+            border: 3px solid #003366; /* 修改边框颜色为深蓝色 */
+            background-color: #f0f8ff;
+            padding: 15px; /* 调整内边距 */
+            box-sizing: border-box;
+        }
+
+
+        .movie-container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .movie {
+            flex: 1 0 14.2%;
+            margin: 10px;
+            padding: 10px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            box-sizing: border-box;
+            position: relative; /* 添加相对定位 */
+        }
+
+        .movie img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .movie-info h2 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .movie-info p {
+            font-size: 14px;
+        }
+
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 3px solid #ccc;
+            clear: both;
+        }
+
+        #main-title {
+            text-align: left;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        #username-display {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #f0f8ff;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1 id="main-title">影视推荐</h1>
+        <div id="username-display"></div>
+    </div>
+    <hr>
+    <p class="section-title">以下是对您的喜好所作出的电影推荐！</p>
+    <div class="container">
+    <div class="content">
+        <div id="movie-container-wrapper">
+            {% for movie in movies %}
+            <div class="movie-container">
+                <div class="movie">
+                    {% if movie.image %}
+                    <img src="{% static 'img/'|add:movie.image %}" alt="Movie Image">
+                    {% else %}
+                    <img src="{% static 'img/test.jpg' %}" alt="Default Image">
+                    {% endif %}
+                    <div class="movie-info">
+                        <!-- 在电影标题上添加点击事件 -->
+                        <h2 class="movie-title" data-image="{{ movie.image }}">{{ movie.title }}</h2>
+                        <p>{{ movie.description }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+    <script></script>
+</body>
+</html>

@@ -1,14 +1,14 @@
 import json
 from django.shortcuts import render, HttpResponse, redirect
 from algo.ReadMovieImgRandom import ReadMovieImgRandom
+from algo.Recommendation import Recommendation
 from functional_zone.ReadUserLogMsg import ReadUserLogMsg
 from functional_zone.UserRegister import UserRegister
 from .models import Moviereal
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from django.contrib.auth.hashers import make_password
 from django.http import JsonResponse, HttpResponseRedirect
-from django.urls import reverse
+from algo.CollaborativeFiltering import main as collaborative_filtering_main
 
 
 # Create your views here.
@@ -44,6 +44,46 @@ def userlogin(request):
     else:
         # GET 请求时返回登录表单页面
         return render(request, 'user_login.html')
+
+
+def recommendation(request):
+    """
+    推荐页面
+    :param request:
+    :return:
+    """
+    if request.method == 'GET':
+        #  从表中读出随机十个的电影信息
+        obj = ReadMovieImgRandom()
+        data_df = obj.calculate(static='recommendation')
+        json_data = data_df.to_json(orient='records')
+        context = json.loads(json_data)
+        return render(request, 'recommendation.html', {'movies': context})
+
+    elif request.method == 'POST':
+        # POST是提交评分表单到后台,加载完成时也会往后端传递一次用户名，用于判断该用户的观影量是否大于10
+        data = json.loads(request.body)
+        user_name = data.get('username')
+        data["status"] = False
+        obj = Recommendation()
+        # 第一次加载完成时也会往后端传递一次用户名，推荐方法处理返回值为False则说明还需要表单数据，如果为True则说明用户观影量已经到达指定值
+        data = obj.calculate(data)
+        if data.get('status') is True:
+            return JsonResponse(data)
+
+
+def recommendation_show(request, user_name):
+    """
+       显示推荐的电影页面
+       :param request:
+       :param user_name: 推荐的用户Id
+       :return:
+       """
+    recommend_top10_df = collaborative_filtering_main(user_name=user_name)
+    recommend_top10_df = process_movie_tags(recommend_top10_df)
+    json_data = recommend_top10_df.to_json(orient='records')
+    context = json.loads(json_data)
+    return render(request, 'recommendation_show.html', {"movies": context})
 
 
 def userregister(request):
@@ -87,9 +127,9 @@ def userregister(request):
 def index(request):
     """首页"""
     if request.method == 'GET':
-        #  从表中读出随机三十个的电影信息
+        #  从表中读出随机六十个的电影信息
         obj = ReadMovieImgRandom()
-        data_df = obj.calculate()
+        data_df = obj.calculate(static='index')
         json_data = data_df.to_json(orient='records')
         context = json.loads(json_data)
         return render(request, 'index.html', {'movies': context})
@@ -121,3 +161,19 @@ def detail(request, goods_id):
     # 传给模板的参数
     context = {'goods': goods}
     return render(request, 'detail.html', context)
+
+
+def process_movie_tags(data_df):
+    # 处理电影标签
+    data_df['new_movie_labels'] = data_df['movie_labels']
+    # 使用apply方法结合lambda函数来对'new_movie_labels'列进行处理。split(' / ')会将字符串分割成列表，
+    # 只选择列表中索引为 1 到 3 的部分，最后再用'/'.join() 连接起来。这样就能够过滤掉大部分国家信息并保留前三个标签。
+    data_df['new_movie_labels'] = data_df['new_movie_labels'].apply(lambda x: ' / '.join(x.split(' / ')[1:4]))
+    data_df = data_df[['movie_name', 'new_movie_labels', 'movie_img']]
+    # 重命名列
+    data_df = data_df.rename(columns={
+        'movie_name': 'title',
+        'new_movie_labels': 'description',
+        'movie_img': 'image'
+    })
+    return data_df

@@ -1,0 +1,235 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Yaemiko影视推荐</title>
+    <style>
+        body {
+            background-color: #f0f8ff; /* 淡蓝色 */
+            margin: 0;
+            padding: 0;
+            position: relative; /* 设置为相对定位的参考点 */
+        }
+
+        .sidebar {
+            width: 25%; /* 调整宽度为25% */
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .content {
+            width: 70%; /* 调整宽度为70% */
+            padding: 20px;
+            text-align: right;
+        }
+
+        .right-container {
+            flex-grow: 1;
+            background-color: #f0f8ff;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex; /* 使用 Flexbox 布局 */
+            flex-direction: column; /* 垂直方向排列子元素 */
+        }
+
+        .user-container {
+            border: 3px solid #003366; /* 修改边框颜色为深蓝色 */
+            background-color: #f0f8ff;
+            padding: 15px; /* 调整内边距 */
+            box-sizing: border-box;
+        }
+
+
+        .movie-container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .movie {
+            flex: 1 0 14.2%;
+            margin: 10px;
+            padding: 10px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            box-sizing: border-box;
+            position: relative; /* 添加相对定位 */
+        }
+
+        .movie img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .movie-info h2 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .movie-info p {
+            font-size: 14px;
+        }
+
+        hr {
+            margin: 20px 0;
+            border: none;
+            border-top: 3px solid #ccc;
+            clear: both;
+        }
+
+        #main-title {
+            text-align: left;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        #username-display {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #f0f8ff;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h1 id="main-title">影视推荐</h1>
+    </div>
+    <div id="username-display"></div>
+    <hr>
+    <p id="main-title">检测到您没有观影记录，请完成表单，以便了解您的喜好！</p>
+    <div class="container">
+        <div class="content">
+            <div class="row">
+                {% for movie in movies %}
+                <div class="col-md-4 movie">
+                    {% if movie.image %}
+                        <img src="{% static 'img/'|add:movie.image %}" alt="Movie Image">
+                    {% else %}
+                        <img src="{% static 'img/test.jpg' %}" alt="Default Image">
+                    {% endif %}
+                    <h2 class="movie-title">{{ movie.title }}</h2>
+                    <p class="movie-description">{{ movie.description }}</p>
+                    <div class="rating-buttons">
+                        <label><input type="radio" name="{{ movie.title }}" value="0">没看过</label>
+                        <label><input type="radio" name="{{ movie.title }}" value="1">不堪入目(1分)</label>
+                        <label><input type="radio" name="{{ movie.title }}" value="2">堪堪入眼(2分)</label>
+                        <label><input type="radio" name="{{ movie.title }}" value="3">中规中矩(3分)</label>
+                        <label><input type="radio" name="{{ movie.title }}" value="4">差强人意(4分)</label>
+                        <label><input type="radio" name="{{ movie.title }}" value="5">非常不错(5分)</label>
+                    </div>
+                </div>
+                {% if forloop.counter|divisibleby:3 %}
+                    </div><div class="row">
+                {% endif %}
+                {% endfor %}
+            </div>
+            <button id="submit-button">提交</button>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载完成后执行的函数
+        window.onload = function() {
+            // 获取保存在 sessionStorage 中的用户名
+            const username = sessionStorage.getItem('username');
+            let data = {
+                'username': username,
+            };
+
+            // 指向recommendation视图函数
+            const recommendationUrl = "{% url 'recommendation' %}";
+            fetch(recommendationUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Response:', data);
+                if (data.status){
+                    alert("该用户数据量足够，正在进行推荐计算，请稍等！！！");
+                    window.location.href = `/moviereal/recommendation_show/${username}/`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // 处理错误
+            });
+        };
+        document.getElementById('submit-button').addEventListener('click', function() {
+            let ratings = {};
+            const username = sessionStorage.getItem('username');
+            let movies = document.querySelectorAll('.movie');
+            let unratedMovies = [];
+
+            movies.forEach(function(movie) {
+                let title = movie.querySelector('.movie-title').innerText.trim();
+                let rating = movie.querySelector('input[type="radio"]:checked');
+
+                // 检查是否有评分
+                if (rating) {
+                    ratings[title] = rating.value;
+                } else {
+                    unratedMovies.push(title);
+                }
+            });
+
+            // 如果用户有未评分的
+            if (unratedMovies.length > 0) {
+                // 构建提示消息
+                let message = '请对以下电影进行评分：\n';
+                unratedMovies.forEach(function(title) {
+                    message += '- ' + title + '\n';
+                });
+
+                // 提醒用户对未评分的电影进行评分
+                alert(message);
+                return; // 阻止继续执行提交操作
+            }
+
+            let data = {
+                'username': username,
+                'ratings': ratings
+            };
+
+            // 指向recommendation视图函数
+            const recommendationUrl = "{% url 'recommendation' %}";
+            fetch(recommendationUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Response:', data);
+                if (data.status){
+                    alert("该用户数据量足够，正在进行推荐计算，请稍等！！！"); // 在页面中显示一个提示框
+                    window.location.href = `/moviereal/recommendation_show/${username}/`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // 处理错误
+            });
+        });
+</script>
+</body>
+</html>

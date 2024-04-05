@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-
 from algo.MyDecorator import timer
 from data_entry.PublicFunctions import PublicFunctions
 from sklearn import model_selection as cv
@@ -28,8 +27,10 @@ class CollaborativeFiltering:
         self.n_users = None
         # 推荐数据综合df
         self.user_movie_df = None
-        # 传入的需要推荐的用户id
-        self.user_id = kwargs.get('user_id')
+        # 传入的需要推荐的用户name
+        self.user_name = kwargs.get('user_name')
+        # 需要推荐的用户id
+        self.user_id = self.pf.read_user_id(user_name=self.user_name)
 
     def read_movie_msg_df(self):
         movie_msg_df = self.pf.read_table_all("movie_msg")
@@ -143,10 +144,11 @@ class CollaborativeFiltering:
         filtered_df = filtered_df.sort_values('order')
 
         # 创建新的 DataFrame 包含电影ID和电影名
-        recommend_top50_df = filtered_df[['movie_id', 'movie_name', 'movie_labels', 'movie_img','average_score']].reset_index(drop=True)
+        recommend_top50_df = filtered_df[
+            ['movie_id', 'movie_name', 'movie_labels', 'movie_img', 'average_score']].reset_index(drop=True)
         # recommend_top50_df 中根据 movie_id 和 movie_name 列进行去重操作，保留第一次出现的重复行，并在原 DataFrame 上进行修改。
         recommend_top50_df.drop_duplicates(subset=['movie_id', 'movie_name'], keep='first', inplace=True)
-        # todo 通过recommend_top10_df进行推荐分析
+        # todo 通过recommend_top50_df进行推荐分析
         return recommend_top50_df
 
     @timer
@@ -183,10 +185,12 @@ class CollaborativeFiltering:
 
         return recommend_top50_df
 
+    @timer
     def calculate(self):
         user_movie_df = self.read_data_df()
         # 协同过滤算法推荐
         recommend_top50_df = self.algorithm_processing(user_movie_df)
+        print(recommend_top50_df)
         return recommend_top50_df
 
 
@@ -197,8 +201,8 @@ def main(**kwargs):
 
 
 def main_test():
-    user_id = 21261
-    main(user_id=user_id)
+    user_name = 'test5'
+    main(user_name=user_name)
 
 
 if __name__ == '__main__':
