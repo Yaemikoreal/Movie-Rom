@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 from algo.MyDecorator import timer
@@ -8,7 +9,7 @@ from sklearn.metrics import mean_squared_error
 from math import sqrt
 
 """
-本脚本用于协同过滤算法（test）
+本脚本用于协同过滤算法推荐（test）
 """
 
 
@@ -118,18 +119,8 @@ class CollaborativeFiltering:
         RMSE = sqrt(mean_squared_error(prediction, ground_truth))
         return RMSE
 
-    def calculate_recommend(self, train_item_prediction, train_user_prediction, test_item_prediction,
-                            test_user_prediction):
-        # 将 NumPy 数组转换为 Pandas DataFrame，并根据用户 ID 获取对应行数据
-        # 此处id-1是因为构建矩阵长度从0开始
-        user_id = self.user_id - 1
-        data = {
-            'train_item': train_item_prediction[user_id],
-            'train_user': train_user_prediction[user_id],
-            'test_item': test_item_prediction[user_id],
-            'test_user': test_user_prediction[user_id]
-        }
-        df = pd.DataFrame(data)
+    @timer
+    def calculate_recommend(self, df):
         # 计算每行除了新加一列外的其他列的平均值
         df['mean'] = df.mean(axis=1)
         # 取出评价的十个最大值
@@ -148,8 +139,69 @@ class CollaborativeFiltering:
             ['movie_id', 'movie_name', 'movie_labels', 'movie_img', 'average_score']].reset_index(drop=True)
         # recommend_top50_df 中根据 movie_id 和 movie_name 列进行去重操作，保留第一次出现的重复行，并在原 DataFrame 上进行修改。
         recommend_top50_df.drop_duplicates(subset=['movie_id', 'movie_name'], keep='first', inplace=True)
-        # todo 通过recommend_top50_df进行推荐分析
         return recommend_top50_df
+
+    def save_data_to_csv(self, *predictions):
+        # 获取当前脚本所在目录的绝对路径
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # 获取当前脚本所在目录的上两层目录，也就是当前目录的父目录
+        save_path = os.path.abspath(os.path.join(script_dir, '..', 'moviereal', 'csv'))
+
+        # 确保保存路径存在
+        os.makedirs(save_path, exist_ok=True)
+
+        # 定义要保存的文件名列表
+        file_names = ['train_item_prediction.csv', 'train_user_prediction.csv',
+                      'test_item_prediction.csv', 'test_user_prediction.csv']
+
+        # 遍历预测结果并保存为CSV文件
+        for prediction, file_name in zip(predictions, file_names):
+            # 将 NumPy 数组转换为 Pandas DataFrame 对象
+            prediction_df = pd.DataFrame(prediction)
+            file_path = os.path.join(save_path, file_name)
+            prediction_df.to_csv(file_path, index=False)
+
+        print("csv数据储存成功!")
+
+    def read_first_row_and_column(self, file_path):
+        with open(file_path, 'r', encoding='utf-8') as file:
+            # 读取第一行，并根据逗号分隔成列表
+            first_row = file.readline().strip().split(',')
+            # 读取第一列
+            first_column = [line.strip().split(',')[0] for line in file]
+
+        return first_row, first_column
+
+    def get_csv_shape(self, first_row, first_column):
+        # 计算总行数
+        num_rows = len(first_column)
+        # 计算总列数
+        num_cols = len(first_row)
+
+        return num_rows, num_cols
+
+    def check_csv_data(self):
+        """
+        检查csv中数据量是否和评论人数和电影数一致（即行数和列数）
+        如果行数等于读取的用户数并且列数等于电影数，则可以认同数据没有大更新,则读取csv数据即可
+        """
+        # 获取当前脚本所在目录的绝对路径
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # 获取当前脚本所在目录的上两层目录，也就是当前目录的父目录
+        save_path = os.path.abspath(os.path.join(script_dir, '..', 'moviereal', 'csv'))
+        read_path = os.path.join(save_path, 'train_item_prediction.csv')
+
+        # 只读取第一行和第一列，这样避免了读取全量，读取获取速度更快
+        first_row, first_column = self.read_first_row_and_column(read_path)
+
+        # 获取总行数和列数
+        num_rows, num_cols = self.get_csv_shape(first_row, first_column)
+
+        # 如果行数等于读取的用户数并且列数等于电影数，则可以认同数据没有大更新,则读取csv数据即可
+        if num_rows == self.n_users and num_cols == self.n_items:
+            return False
+        else:
+            return True
 
     @timer
     def algorithm_processing(self, user_movie_df):
@@ -158,6 +210,7 @@ class CollaborativeFiltering:
         :param user_movie_df:
         :return:
         """
+
         # 使用train_test_split函数来将数据集划分为训练集和测试集，其中测试集占1/4
         train_data, test_data = cv.train_test_split(user_movie_df, test_size=0.25)
         # 创建了训练集和测试集的用户-物品矩阵，其中矩阵的行表示用户，列表示电影，矩阵中的值表示用户对电影的评分。
@@ -166,11 +219,12 @@ class CollaborativeFiltering:
         # 使用 sklearn 的pairwise_distances函数来计算余弦相似性。注意，因为评价都为正值输出取值应为0到1.
         train_user_similarity, train_item_similarity = self.calculate_cosine_similarity(train_data_matrix)
         test_user_similarity, test_item_similarity = self.calculate_cosine_similarity(test_data_matrix)
-        # 计算预测评分
+        # 计算预测评分(运行时间最长，占用最大）
         train_item_prediction, train_user_prediction = self.scoring_prediction(train_data_matrix, train_item_similarity,
                                                                                train_user_similarity)
         test_item_prediction, test_user_prediction = self.scoring_prediction(test_data_matrix, test_item_similarity,
                                                                              test_user_similarity)
+        self.save_data_to_csv(train_item_prediction, train_user_prediction, test_item_prediction, test_user_prediction)
         # 估算一下，RMSE是一种常用的用于评估预测模型准确度的指标，
         # RMSE 的值越小，说明模型的预测结果与真实结果之间的差异越小，模型的拟合程度越好。因此，RMSE 越接近于零，表示模型的性能越好。
         print('User-based CF RMSE: ' + str(self.rmse(train_user_prediction, train_data_matrix)))
@@ -178,22 +232,87 @@ class CollaborativeFiltering:
         print('User-based CF RMSE: ' + str(self.rmse(test_user_prediction, test_data_matrix)))
         print('Item-based CF RMSE: ' + str(self.rmse(test_item_prediction, test_data_matrix)))
 
-        # 推荐计算(推荐前五十的电影)
-        recommend_top50_df = self.calculate_recommend(train_item_prediction, train_user_prediction,
-                                                      test_item_prediction,
-                                                      test_user_prediction)
+        # 此处id-1是因为构建矩阵长度从0开始
+        user_id = self.user_id - 1
+        data = {
+            'train_item': train_item_prediction[user_id],
+            'train_user': train_user_prediction[user_id],
+            'test_item': test_item_prediction[user_id],
+            'test_user': test_user_prediction[user_id]
+        }
+        data_df = pd.DataFrame(data)
 
-        return recommend_top50_df
+        return data_df
+
+    @timer
+    def read_csv(self):
+        # 获取当前脚本所在目录的绝对路径
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        # 获取当前脚本所在目录的上两层目录，也就是当前目录的父目录
+        save_path = os.path.abspath(os.path.join(script_dir, '..', 'moviereal', 'csv'))
+
+        read_path1 = os.path.join(save_path, 'train_item_prediction.csv')
+        read_path2 = os.path.join(save_path, 'train_user_prediction.csv')
+        read_path3 = os.path.join(save_path, 'test_item_prediction.csv')
+        read_path4 = os.path.join(save_path, 'test_user_prediction.csv')
+
+        # 此处id-1是因为构建矩阵长度从0开始
+        user_id = self.user_id - 1
+
+        # 读取CSV文件并加载数据为NumPy数组,只读了对应id的行，加快了读取速度
+        train_item_prediction = np.genfromtxt(read_path1, delimiter=',', skip_header=user_id, max_rows=1)
+        train_user_prediction = np.genfromtxt(read_path2, delimiter=',', skip_header=user_id, max_rows=1)
+        test_item_prediction = np.genfromtxt(read_path3, delimiter=',', skip_header=user_id, max_rows=1)
+        test_user_prediction = np.genfromtxt(read_path4, delimiter=',', skip_header=user_id, max_rows=1)
+
+        data = {
+            'train_item': train_item_prediction,
+            'train_user': train_user_prediction,
+            'test_item': test_item_prediction,
+            'test_user': test_user_prediction
+        }
+        data_df = pd.DataFrame(data)
+
+        return data_df
+
+    def data_organization(self, recommend_top50_df):
+        """
+        数据整理，在推荐名单中去除该用户看过的电影
+        :return:
+        """
+        one_user_df = self.data_df[self.data_df['user_name'] == self.user_name]
+        user_movie_list = one_user_df['movie_name'].tolist()
+        # 排除该用户已经看过的电影
+        recommend_df = recommend_top50_df[~recommend_top50_df['movie_name'].isin(user_movie_list)]
+        # 排除 movie_img 列中为空的行
+        recommend_df = recommend_df.dropna(subset=['movie_img'])
+        # 如果推荐数大于等于12，则返回十二个推荐结果；如果小于十二个，则有多少推荐多少
+        if len(recommend_df) >= 12:
+            recommend_df = recommend_df.head(12)
+        else:
+            recommend_df = recommend_df.head(len(recommend_df))
+        return recommend_df
 
     @timer
     def calculate(self):
         user_movie_df = self.read_data_df()
         # 协同过滤算法推荐
-        recommend_top50_df = self.algorithm_processing(user_movie_df)
-        print(recommend_top50_df)
-        return recommend_top50_df
+        # 如果检查返回为True，则需要进行预测计算；为False时，简单认定可以沿用之前的csv预测数据
+        if self.check_csv_data():
+            print('需要计算！')
+            data_df = self.algorithm_processing(user_movie_df)
+        else:
+            print('正在读取！')
+            data_df = self.read_csv()
+        # 推荐计算(推荐前五十的电影)
+        recommend_top50_df = self.calculate_recommend(data_df)
+        # 数据整理
+        recommend_df = self.data_organization(recommend_top50_df)
+        print(recommend_df)
+        return recommend_df
 
 
+@timer
 def main(**kwargs):
     obj = CollaborativeFiltering(**kwargs)
     recommend_top10_df = obj.calculate()
@@ -201,7 +320,7 @@ def main(**kwargs):
 
 
 def main_test():
-    user_name = 'test5'
+    user_name = '影志'
     main(user_name=user_name)
 
 
