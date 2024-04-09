@@ -82,12 +82,13 @@ class CollaborativeFiltering:
         return data_matrix
 
     def calculate_cosine_similarity(self, data_matrix):
-        # 计算了用户矩阵中每对用户之间的余弦相似度得分，最终生成一个用户相似度矩阵
-        user_similarity = pairwise_distances(data_matrix, metric='cosine')
+        # # 计算了用户矩阵中每对用户之间的余弦相似度得分，最终生成一个用户相似度矩阵
+        # user_similarity = pairwise_distances(data_matrix, metric='cosine')
+
         # 计算了转置后的用户-物品矩阵中每对物品之间的余弦相似度得分，最终生成一个物品相似度矩阵
         # .T 表示对 train_data_matrix 进行转置操作。
         item_similarity = pairwise_distances(data_matrix.T, metric='cosine')
-        return user_similarity, item_similarity
+        return item_similarity
 
     def predict(self, ratings, similarity, u_type):
         # 基于用户或物品的协同过滤算法，通过计算用户之间的相似度或物品之间的相似度，来预测用户对未评分物品的评分。
@@ -104,11 +105,11 @@ class CollaborativeFiltering:
             pred = ratings.dot(similarity) / np.array([np.abs(similarity).sum(axis=1)])
             return pred
 
-    def scoring_prediction(self, data_matrix, item_similarity, user_similarity):
+    def scoring_prediction(self, data_matrix, item_similarity):
         # 一行表示该用户对所有物品的评分预测结果，即用户对每个物品的预测评分。
         item_prediction = self.predict(data_matrix, item_similarity, u_type='item')
-        user_prediction = self.predict(data_matrix, user_similarity, u_type='user')
-        return item_prediction, user_prediction
+        # user_prediction = self.predict(data_matrix, user_similarity, u_type='user')
+        return item_prediction
 
     def rmse(self, prediction, ground_truth):
         # ground_truth.nonzero()找出ground_truth中非零元素的位置,从prediction中提取对应位置的预测值，以便与真实值进行比较。
@@ -119,27 +120,31 @@ class CollaborativeFiltering:
         RMSE = sqrt(mean_squared_error(prediction, ground_truth))
         return RMSE
 
-    @timer
-    def calculate_recommend(self, df):
-        # 计算每行除了新加一列外的其他列的平均值
-        df['mean'] = df.mean(axis=1)
-        # 取出评价的十个最大值
-        top10_indices_arr = df['mean'].nlargest(50).index.values
-        recommend_top50_list = list(top10_indices_arr)
-
+    def train_test_recommend(self, df, train_or_test='train', item_or_user='item'):
+        # 计算item或者user推荐的最大50个值
+        recommend_top50_train_arr = df[f'{train_or_test}_{item_or_user}'].nlargest(50).index.values
+        # 分别取出训练集和测试集评价最高的五十个值
+        recommend_top50_train_list = list(recommend_top50_train_arr)
         # 创建一个新的 DataFrame，只包含在 movie_id_list 中出现的 movie_id 对应的行
-        filtered_df = self.data_df[self.data_df['movie_id'].isin(recommend_top50_list)]
-
+        filtered_train_df = self.data_df[self.data_df['movie_id'].isin(recommend_top50_train_list)]
         # 按照 movie_id_list 的顺序对筛选结果进行排序，保持原有推荐排序
-        filtered_df['order'] = filtered_df['movie_id'].apply(lambda x: recommend_top50_list.index(x))
-        filtered_df = filtered_df.sort_values('order')
-
+        filtered_train_df['order'] = filtered_train_df['movie_id'].apply(lambda x: recommend_top50_train_list.index(x))
+        filtered_train_df = filtered_train_df.sort_values('order')
         # 创建新的 DataFrame 包含电影ID和电影名
-        recommend_top50_df = filtered_df[
+        recommend_top50_df = filtered_train_df[
             ['movie_id', 'movie_name', 'movie_labels', 'movie_img', 'average_score']].reset_index(drop=True)
         # recommend_top50_df 中根据 movie_id 和 movie_name 列进行去重操作，保留第一次出现的重复行，并在原 DataFrame 上进行修改。
         recommend_top50_df.drop_duplicates(subset=['movie_id', 'movie_name'], keep='first', inplace=True)
         return recommend_top50_df
+
+    @timer
+    def calculate_recommend(self, df):
+        recommend_top50_train_df = self.train_test_recommend(df, 'train', 'item')
+        recommend_top50_test_df = self.train_test_recommend(df, 'test', 'item')
+        # # 使用 merge 函数在 movie_name 列上取交集
+        # intersection_df = pd.merge(recommend_top50_train_df, recommend_top50_test_df, on='movie_name', how='inner')
+
+        return recommend_top50_train_df, recommend_top50_test_df
 
     def save_data_to_csv(self, *predictions):
         # 获取当前脚本所在目录的绝对路径
@@ -151,8 +156,7 @@ class CollaborativeFiltering:
         os.makedirs(save_path, exist_ok=True)
 
         # 定义要保存的文件名列表
-        file_names = ['train_item_prediction.csv', 'train_user_prediction.csv',
-                      'test_item_prediction.csv', 'test_user_prediction.csv']
+        file_names = ['train_item_prediction.csv', 'test_item_prediction.csv']
 
         # 遍历预测结果并保存为CSV文件
         for prediction, file_name in zip(predictions, file_names):
@@ -217,31 +221,25 @@ class CollaborativeFiltering:
         train_data_matrix = self.calculate_data_matrix(train_data)
         test_data_matrix = self.calculate_data_matrix(test_data)
         # 使用 sklearn 的pairwise_distances函数来计算余弦相似性。注意，因为评价都为正值输出取值应为0到1.
-        train_user_similarity, train_item_similarity = self.calculate_cosine_similarity(train_data_matrix)
-        test_user_similarity, test_item_similarity = self.calculate_cosine_similarity(test_data_matrix)
+        train_item_similarity = self.calculate_cosine_similarity(train_data_matrix)
+        test_item_similarity = self.calculate_cosine_similarity(test_data_matrix)
         # 计算预测评分(运行时间最长，占用最大）
-        train_item_prediction, train_user_prediction = self.scoring_prediction(train_data_matrix, train_item_similarity,
-                                                                               train_user_similarity)
-        test_item_prediction, test_user_prediction = self.scoring_prediction(test_data_matrix, test_item_similarity,
-                                                                             test_user_similarity)
-        self.save_data_to_csv(train_item_prediction, train_user_prediction, test_item_prediction, test_user_prediction)
+        train_item_prediction = self.scoring_prediction(train_data_matrix, train_item_similarity)
+        test_item_prediction = self.scoring_prediction(test_data_matrix, test_item_similarity)
+        # 存储数据到本地
+        self.save_data_to_csv(train_item_prediction, test_item_prediction)
         # 估算一下，RMSE是一种常用的用于评估预测模型准确度的指标，
         # RMSE 的值越小，说明模型的预测结果与真实结果之间的差异越小，模型的拟合程度越好。因此，RMSE 越接近于零，表示模型的性能越好。
-        print('User-based CF RMSE: ' + str(self.rmse(train_user_prediction, train_data_matrix)))
-        print('Item-based CF RMSE: ' + str(self.rmse(train_item_prediction, train_data_matrix)))
-        print('User-based CF RMSE: ' + str(self.rmse(test_user_prediction, test_data_matrix)))
-        print('Item-based CF RMSE: ' + str(self.rmse(test_item_prediction, test_data_matrix)))
+        print('(train)Item-based CF RMSE: ' + str(self.rmse(train_item_prediction, train_data_matrix)))
+        print('(test)Item-based CF RMSE: ' + str(self.rmse(test_item_prediction, test_data_matrix)))
 
         # 此处id-1是因为构建矩阵长度从0开始
         user_id = self.user_id - 1
         data = {
             'train_item': train_item_prediction[user_id],
-            'train_user': train_user_prediction[user_id],
             'test_item': test_item_prediction[user_id],
-            'test_user': test_user_prediction[user_id]
         }
         data_df = pd.DataFrame(data)
-
         return data_df
 
     @timer
@@ -288,6 +286,7 @@ class CollaborativeFiltering:
         recommend_df = recommend_df.dropna(subset=['movie_img'])
         # 如果推荐数大于等于12，则返回十二个推荐结果；如果小于十二个，则有多少推荐多少
         if len(recommend_df) >= 12:
+            # 推荐头12部电影
             recommend_df = recommend_df.head(12)
         else:
             recommend_df = recommend_df.head(len(recommend_df))
@@ -305,9 +304,9 @@ class CollaborativeFiltering:
             print('正在读取！')
             data_df = self.read_csv()
         # 推荐计算(推荐前五十的电影)
-        recommend_top50_df = self.calculate_recommend(data_df)
+        recommend_top50_train_df, recommend_top50_test_df = self.calculate_recommend(data_df)
         # 数据整理
-        recommend_df = self.data_organization(recommend_top50_df)
+        recommend_df = self.data_organization(recommend_top50_train_df)
         print(recommend_df)
         return recommend_df
 
