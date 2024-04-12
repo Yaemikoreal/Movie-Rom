@@ -96,12 +96,17 @@ class CollaborativeFiltering:
         if u_type == 'user':
             # 对于基于用户的预测，首先计算每个用户的平均评分，然后将原始评分减去平均评分，接着通过用户相似度加权得到预测评分。
             mean_user_rating = ratings.mean(axis=1)
+            # 计算每个用户对电影评分与其对应平均评分的差值。mean_user_rating[:, np.newaxis]将平均评分数组转换为列向量，然后与原始评分矩阵相减，得到一个新的差值矩阵
             ratings_diff = (ratings - mean_user_rating[:, np.newaxis])
+            # similarity.dot(ratings_diff)：计算电影之间的相似度与用户评分与平均评分的差值的乘积。
+            # 这里利用了之前计算得到的相似度矩阵similarity，与用户评分与平均评分的差值矩阵相乘，得到一个新的矩阵，其中每个元素表示电影之间的相似度与用户评分差值的加权和。
+            # np.array([np.abs(similarity).sum(axis=1)]).T：与之前相同，计算每部电影与其他电影相似度的绝对值之和，并将其转换为列向量。
             pred = mean_user_rating[:, np.newaxis] + similarity.dot(ratings_diff) / np.array(
                 [np.abs(similarity).sum(axis=1)]).T
             return pred
         elif u_type == 'item':
             # 对于基于物品的预测，直接使用评分矩阵与物品相似度矩阵相乘，再除以物品相似度矩阵的绝对值之和，得到预测评分。
+            # ratings.dot(similarity),矩阵相乘；np.array([np.abs(similarity).sum(axis=1)])，对similarity矩阵按行进行绝对值求和，并转成数组；
             pred = ratings.dot(similarity) / np.array([np.abs(similarity).sum(axis=1)])
             return pred
 

@@ -56,10 +56,10 @@ class ReadMovieImgRandom:
         return movie_top250_df, movie_not_in_top250_df
 
     def random_ten_movies(self, movie_top250_df, movie_not_in_top250_df):
-        # 从 DataFrame 中随机挑选 random_num 行，从经典电影和新电影中一共提取十个出来，经典高分电影占6-8个
+        # 从 DataFrame 中随机挑选 random_num 行，从经典电影和新电影中一共提取十二个出来，经典高分电影占6-8个
         random_num = random.randint(6, 8)
         movie_top250_random_df = movie_top250_df.sample(n=random_num)
-        new_movie_df = movie_not_in_top250_df.sample(n=10 - random_num)
+        new_movie_df = movie_not_in_top250_df.sample(n=12 - random_num)
         # 使用 concat() 函数将两个 DataFrame 合并在一起
         data_df = pd.concat([movie_top250_random_df, new_movie_df])
         return data_df

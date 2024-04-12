@@ -89,6 +89,7 @@
             text-align: left;
             font-size: 24px;
             font-weight: bold;
+            margin-top: 20px; /* 顶部留出一定的空间 */
         }
 
         #username-display {
@@ -99,16 +100,50 @@
             padding: 10px;
             border-radius: 5px;
         }
+        .col-md-4.movie {
+            display: flex; /* 使用 Flexbox 布局 */
+            flex-direction: column; /* 将子元素垂直排列 */
+            align-items: center; /* 水平居中 */
+            text-align: center; /* 文本内容居中 */
+            flex: 1 0 14.2%;
+            margin: 10px;
+            padding: 10px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            box-sizing: border-box;
+            position: relative; /* 添加相对定位 */
+        }
+        .row {
+            display: flex; /* 使用 Flexbox 布局 */
+            justify-content: center; /* 水平居中对齐 */
+        }
+        #submit-button {
+            display: block; /* 让按钮变成块级元素 */
+            margin: 0 auto; /* 居中 */
+            padding: 10px 20px; /* 增加内边距 */
+            border-radius: 10px; /* 圆角 */
+            background-color: green; /* 背景色 */
+            color: white; /* 文字颜色 */
+            font-size: 16px; /* 字体大小 */
+            border: none; /* 移除边框 */
+            cursor: pointer; /* 鼠标指针样式 */
+            transition: background-color 0.3s; /* 添加过渡效果 */
+        }
+
+        #submit-button:hover {
+            background-color: darkgreen; /* 悬停时背景颜色变化 */
+        }
 
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <h1 id="main-title">影视推荐</h1>
+        <h1 id="main-title">推荐调查</h1>
     </div>
     <div id="username-display"></div>
     <hr>
-    <p id="main-title">检测到您没有观影记录，请完成表单，以便了解您的喜好！</p>
+    <p id="main-title">检测到您没有观影记录或者记录数据量不足，请完成表单，以便了解您的喜好！</p>
     <div class="container">
         <div class="content">
             <div class="row">
@@ -123,11 +158,11 @@
                     <p class="movie-description">{{ movie.description }}</p>
                     <div class="rating-buttons">
                         <label><input type="radio" name="{{ movie.title }}" value="0">没看过</label>
-                        <label><input type="radio" name="{{ movie.title }}" value="1">不堪入目(1分)</label>
-                        <label><input type="radio" name="{{ movie.title }}" value="2">堪堪入眼(2分)</label>
-                        <label><input type="radio" name="{{ movie.title }}" value="3">中规中矩(3分)</label>
-                        <label><input type="radio" name="{{ movie.title }}" value="4">差强人意(4分)</label>
-                        <label><input type="radio" name="{{ movie.title }}" value="5">非常不错(5分)</label>
+                        <label><input type="radio" name="{{ movie.title }}" value="1">1分</label>
+                        <label><input type="radio" name="{{ movie.title }}" value="2">2分</label>
+                        <label><input type="radio" name="{{ movie.title }}" value="3">3分</label>
+                        <label><input type="radio" name="{{ movie.title }}" value="4">4分</label>
+                        <label><input type="radio" name="{{ movie.title }}" value="5">5分</label>
                     </div>
                 </div>
                 {% if forloop.counter|divisibleby:3 %}
