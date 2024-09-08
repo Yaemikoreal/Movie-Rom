@@ -68,8 +68,8 @@ def recommendation(request):
         obj = Recommendation()
         # 第一次加载完成时也会往后端传递一次用户名，推荐方法处理返回值为False则说明还需要表单数据，如果为True则说明用户观影量已经到达指定值
         data = obj.calculate(data)
-        if data.get('status') is True:
-            return JsonResponse(data)
+        # if data.get('status') is True:
+        return JsonResponse(data)
 
 
 def recommendation_show(request, user_name):
@@ -96,12 +96,6 @@ def userregister(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         # 处理表单提交逻辑
-
-        # 密码规则:
-        # 你的密码不能与你的其他个人信息太相似。
-        # 你的密码必须包含至少 8 个字符。
-        # 你的密码不能全都是数字。
-
         obj = UserRegister()
         static = obj.calculate(data)
         if static:

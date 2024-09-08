@@ -59,6 +59,8 @@ class Recommendation:
             if movie_count >= 10:
                 print(f"用户<{user_name}>观影量大于10！")
                 return True
+            else:
+                return False
 
     def read_movie_user_comment(self, user_name):
         # 读取出用户现在的观影数

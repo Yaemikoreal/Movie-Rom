@@ -177,6 +177,7 @@ class CollaborativeFiltering:
             # 读取第一行，并根据逗号分隔成列表
             first_row = file.readline().strip().split(',')
             # 读取第一列
+            # 列表推导式，用于从文件中读取每一行，然后获取每行以逗号分隔的第一个元素，并将这些元素组成一个新的列表。
             first_column = [line.strip().split(',')[0] for line in file]
 
         return first_row, first_column
@@ -220,8 +221,8 @@ class CollaborativeFiltering:
         :return:
         """
 
-        # 使用train_test_split函数来将数据集划分为训练集和测试集，其中测试集占1/4
-        train_data, test_data = cv.train_test_split(user_movie_df, test_size=0.25)
+        # 使用train_test_split函数来将数据集划分为训练集和测试集，其中测试集占1/5
+        train_data, test_data = cv.train_test_split(user_movie_df, test_size=0.2)
         # 创建了训练集和测试集的用户-物品矩阵，其中矩阵的行表示用户，列表示电影，矩阵中的值表示用户对电影的评分。
         train_data_matrix = self.calculate_data_matrix(train_data)
         test_data_matrix = self.calculate_data_matrix(test_data)
@@ -238,7 +239,7 @@ class CollaborativeFiltering:
         print('(train)Item-based CF RMSE: ' + str(self.rmse(train_item_prediction, train_data_matrix)))
         print('(test)Item-based CF RMSE: ' + str(self.rmse(test_item_prediction, test_data_matrix)))
 
-        # 此处id-1是因为构建矩阵长度从0开始
+        # 此处id-1是因为构建矩阵长度从0开始，此处为获取当前检测用户的推荐计算结果值即可。
         user_id = self.user_id - 1
         data = {
             'train_item': train_item_prediction[user_id],
@@ -294,7 +295,10 @@ class CollaborativeFiltering:
             # 推荐头12部电影
             recommend_df = recommend_df.head(12)
         else:
+            # 获取所有电影
             recommend_df = recommend_df.head(len(recommend_df))
+            # 随机抽取12部电影
+            # recommend_df = recommend_df.sample(n=len(recommend_df), replace=False)
         return recommend_df
 
     @timer
@@ -302,12 +306,12 @@ class CollaborativeFiltering:
         user_movie_df = self.read_data_df()
         # 协同过滤算法推荐
         # 如果检查返回为True，则需要进行预测计算；为False时，简单认定可以沿用之前的csv预测数据
-        if self.check_csv_data():
-            print('需要计算！')
-            data_df = self.algorithm_processing(user_movie_df)
-        else:
-            print('正在读取！')
-            data_df = self.read_csv()
+        # if not self.check_csv_data():
+        print('需要计算！')
+        data_df = self.algorithm_processing(user_movie_df)
+        # else:
+        #     print('正在读取！')
+        #     data_df = self.read_csv()
         # 推荐计算(推荐前五十的电影)
         recommend_top50_train_df, recommend_top50_test_df = self.calculate_recommend(data_df)
         # 数据整理

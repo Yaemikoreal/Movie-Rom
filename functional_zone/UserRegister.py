@@ -1,7 +1,5 @@
 import sqlite3
-
 import pandas as pd
-
 from data_entry.PublicFunctions import PublicFunctions
 
 

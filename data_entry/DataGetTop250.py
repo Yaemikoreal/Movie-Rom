@@ -49,14 +49,14 @@ class DataGetTop250:
                 people = li.css('.star span:nth-child(4)::text').get()  # 评价人数
                 summary = li.css('.inq::text').get()  # 一句话概述
                 dit = {
-                    '电影名字': title,
-                    '参演人员': star,
-                    '上映时间': movie_time,
-                    '拍摄国家': movie_country,
-                    '电影类型': movie_type,
-                    '电影评分': rating_num,
-                    '评价人数': people,
-                    '电影概述': summary,
+                    'movie_name': title,
+                    'movie_actors': star,
+                    'movie_year': movie_time,
+                    'shooting_country': movie_country,
+                    'movie_labels': movie_type,
+                    'average_score': rating_num,
+                    'rating_people': people,
+                    'movie_overview': summary,
                 }
                 movie_data_list.append(dit)
         return movie_data_list

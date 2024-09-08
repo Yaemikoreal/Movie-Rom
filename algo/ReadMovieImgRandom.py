@@ -50,7 +50,7 @@ class ReadMovieImgRandom:
         # 排除movie_msg_df中 movie_img 列中为 None 的行
         filtered_df = self.movie_msg_df[self.movie_msg_df["movie_img"].notna()]
         # 在movie_msg中读出top250的电影全部信息,用于用户评分
-        movie_top250_list = self.movie_top250_df_y['电影名字'].tolist()
+        movie_top250_list = self.movie_top250_df_y['movie_name'].tolist()
         movie_top250_df = filtered_df[filtered_df["movie_name"].isin(movie_top250_list)]
         movie_not_in_top250_df = filtered_df[~filtered_df["movie_name"].isin(movie_top250_list)]
         return movie_top250_df, movie_not_in_top250_df

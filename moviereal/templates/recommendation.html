@@ -134,6 +134,47 @@
         #submit-button:hover {
             background-color: darkgreen; /* 悬停时背景颜色变化 */
         }
+        #recommendation-button {
+            display: block; /* 让按钮变成块级元素 */
+            margin: 0 auto; /* 居中 */
+            padding: 10px 20px; /* 增加内边距 */
+            border-radius: 10px; /* 圆角 */
+            background-color: green; /* 背景色 */
+            color: white; /* 文字颜色 */
+            font-size: 16px; /* 字体大小 */
+            border: none; /* 移除边框 */
+            cursor: pointer; /* 鼠标指针样式 */
+            transition: background-color 0.3s; /* 添加过渡效果 */
+        }
+
+        #recommendation-button:hover {
+            background-color: darkgreen; /* 悬停时背景颜色变化 */
+        }
+        #reload-button {
+            display: block; /* 让按钮变成块级元素 */
+            margin: 0 auto; /* 居中 */
+            padding: 10px 20px; /* 增加内边距 */
+            border-radius: 10px; /* 圆角 */
+            background-color: green; /* 背景色 */
+            color: white; /* 文字颜色 */
+            font-size: 16px; /* 字体大小 */
+            border: none; /* 移除边框 */
+            cursor: pointer; /* 鼠标指针样式 */
+            transition: background-color 0.3s; /* 添加过渡效果 */
+        }
+
+        #reload-button:hover {
+            background-color: darkgreen; /* 悬停时背景颜色变化 */
+        }
+        .button-container {
+            text-align: center; /* 将按钮居中对齐 */
+            margin-top: 20px; /* 顶部留出一些间距 */
+        }
+
+        .button-container button {
+            display: inline-block; /* 设置按钮为内联块元素，使其水平排列 */
+            margin-right: 10px; /* 按钮之间的右侧间距 */
+        }
 
     </style>
 </head>
@@ -143,7 +184,11 @@
     </div>
     <div id="username-display"></div>
     <hr>
-    <p id="main-title">检测到您没有观影记录或者记录数据量不足，请完成表单，以便了解您的喜好！</p>
+    <p id="main-title">完成表单，以便了解您的喜好！</p>
+    <div class="button-container">
+        <button id="reload-button" onclick="refreshPage()">换一批电影</button>
+        <button id="recommendation-button" >直接进行推荐！</button>
+    </div>
     <div class="container">
         <div class="content">
             <div class="row">
@@ -177,13 +222,17 @@
     <script>
         // 页面加载完成后执行的函数
         window.onload = function() {
+        }
+        function refreshPage() {
+            // 刷新当前页面
+            location.reload();
+        }
+        document.getElementById('recommendation-button').addEventListener('click', function() {
             // 获取保存在 sessionStorage 中的用户名
             const username = sessionStorage.getItem('username');
-            let data = {
+            const data = {
                 'username': username,
             };
-
-            // 指向recommendation视图函数
             const recommendationUrl = "{% url 'recommendation' %}";
             fetch(recommendationUrl, {
                 method: 'POST',
@@ -199,13 +248,17 @@
                 if (data.status){
                     alert("该用户数据量足够，正在进行推荐计算，请稍等！！！");
                     window.location.href = `/moviereal/recommendation_show/${username}/`;
+                }else {
+                    alert("该用户数据量不充足！请完成推荐调查表单。");
+                    // 刷新当前页面
+                    window.location.reload();
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 // 处理错误
             });
-        };
+        });
         document.getElementById('submit-button').addEventListener('click', function() {
             let ratings = {};
             const username = sessionStorage.getItem('username');
